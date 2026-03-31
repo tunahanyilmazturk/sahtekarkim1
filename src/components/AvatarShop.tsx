@@ -79,7 +79,7 @@ export function AvatarShop({ isOpen, onClose, userId, currentAvatar, onAvatarCha
 
   const handleSelectAvatar = (avatar: ShopAvatar) => {
     if (!ownedAvatars.includes(avatar.id)) return;
-    onAvatarChange(avatar.emoji);
+    onAvatarChange(avatar.id);
     setSelectedAvatar(avatar.id);
     setTimeout(() => setSelectedAvatar(null), 1500);
   };
@@ -93,7 +93,7 @@ export function AvatarShop({ isOpen, onClose, userId, currentAvatar, onAvatarCha
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-end md:items-center justify-center"
           onClick={onClose}
         >
           <motion.div
@@ -137,7 +137,7 @@ export function AvatarShop({ isOpen, onClose, userId, currentAvatar, onAvatarCha
                   }`}
                 >
                   {CATEGORY_ICONS[cat]}
-                  <span className="hidden sm:inline">{cat === 'all' ? 'Tümü' : AVATAR_CATEGORIES[cat]?.label || cat}</span>
+                  <span className="hidden sm:inline">{cat === 'all' ? 'Tümü' : cat === 'owned' ? 'Sahip Olduklarım' : (AVATAR_CATEGORIES as Record<string, { label: string }>)[cat]?.label || cat}</span>
                 </button>
               ))}
             </div>
@@ -149,7 +149,8 @@ export function AvatarShop({ isOpen, onClose, userId, currentAvatar, onAvatarCha
                   const owned = isOwned(avatar.id);
                   const canAfford = coins >= avatar.price;
                   const isSelected = selectedAvatar === avatar.id;
-                  const catStyle = AVATAR_CATEGORIES[avatar.category];
+                  const isEquipped = currentAvatar === avatar.id || currentAvatar === avatar.emoji;
+                  const catStyle = AVATAR_CATEGORIES[avatar.category] || AVATAR_CATEGORIES.common;
 
                   return (
                     <motion.button
@@ -175,8 +176,19 @@ export function AvatarShop({ isOpen, onClose, userId, currentAvatar, onAvatarCha
                         </span>
                       )}
 
+                      {/* Equipped Badge */}
+                      {isEquipped && owned && (
+                        <motion.span
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="absolute -top-1 -left-1 bg-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                        >
+                          ✓
+                        </motion.span>
+                      )}
+
                       {/* Selected Badge */}
-                      {isSelected && (
+                      {isSelected && !isEquipped && (
                         <motion.span
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}

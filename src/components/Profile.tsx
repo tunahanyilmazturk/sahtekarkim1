@@ -258,7 +258,7 @@ export function Profile({ user, onClose, onLogout }: ProfileProps) {
                   >
                     <div className="relative">
                       <AvatarImage
-                        avatarId={getAvatarIdFromEmoji(stats.avatar)}
+                        avatarId={stats.avatar.startsWith('avatar_') ? stats.avatar : getAvatarIdFromEmoji(stats.avatar)}
                         size={80}
                         className="rounded-3xl border-4 border-white/20 shadow-xl"
                       />
@@ -543,7 +543,7 @@ export function Profile({ user, onClose, onLogout }: ProfileProps) {
                             >
                               <div className="relative">
                                 <AvatarImage
-                                  avatarId={getAvatarIdFromEmoji(friend?.avatar || '👤')}
+                                  avatarId={(friend?.avatar || '👤').startsWith('avatar_') ? (friend?.avatar || '👤') : getAvatarIdFromEmoji(friend?.avatar || '👤')}
                                   size={40}
                                 />
                                 <span className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 border-2 border-white rounded-full ${
