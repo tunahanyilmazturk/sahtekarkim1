@@ -96,37 +96,42 @@ ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE room_invites ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies
+-- RLS Policies (Uygulama custom auth kullandığı için tüm işlemler anon key ile yapılır)
 
--- Users: Herkes kendi verisini görebilir, anon sadece kayıt için
+-- Users: Herkese açık (custom auth, Supabase Auth kullanmıyor)
 DROP POLICY IF EXISTS "Users can view own data" ON users;
-CREATE POLICY "Users can view own data" ON users
-  FOR SELECT USING (auth.uid()::text = id);
-
 DROP POLICY IF EXISTS "Users can insert own data" ON users;
-CREATE POLICY "Users can insert own data" ON users
-  FOR INSERT WITH CHECK (auth.uid()::text = id);
-
 DROP POLICY IF EXISTS "Users can update own data" ON users;
-CREATE POLICY "Users can update own data" ON users
-  FOR UPDATE USING (auth.uid()::text = id);
-
 DROP POLICY IF EXISTS "Public can view users list" ON users;
-CREATE POLICY "Public can view users list" ON users
+DROP POLICY IF EXISTS "Anyone can view users" ON users;
+DROP POLICY IF EXISTS "Anyone can insert users" ON users;
+DROP POLICY IF EXISTS "Anyone can update users" ON users;
+
+CREATE POLICY "Anyone can view users" ON users
   FOR SELECT USING (true);
 
--- Friend requests: İlgili kullanıcılar görebilir
+CREATE POLICY "Anyone can insert users" ON users
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Anyone can update users" ON users
+  FOR UPDATE USING (true);
+
+-- Friend requests: Herkese açık
 DROP POLICY IF EXISTS "Friend requests visible to involved users" ON friend_requests;
-CREATE POLICY "Friend requests visible to involved users" ON friend_requests
-  FOR SELECT USING (auth.uid()::text = from_user_id OR auth.uid()::text = to_user_id);
-
 DROP POLICY IF EXISTS "Users can create friend requests" ON friend_requests;
-CREATE POLICY "Users can create friend requests" ON friend_requests
-  FOR INSERT WITH CHECK (auth.uid()::text = from_user_id);
-
 DROP POLICY IF EXISTS "Users can update own friend requests" ON friend_requests;
-CREATE POLICY "Users can update own friend requests" ON friend_requests
-  FOR UPDATE USING (auth.uid()::text = to_user_id OR auth.uid()::text = from_user_id);
+DROP POLICY IF EXISTS "Anyone can view friend requests" ON friend_requests;
+DROP POLICY IF EXISTS "Anyone can create friend requests" ON friend_requests;
+DROP POLICY IF EXISTS "Anyone can update friend requests" ON friend_requests;
+
+CREATE POLICY "Anyone can view friend requests" ON friend_requests
+  FOR SELECT USING (true);
+
+CREATE POLICY "Anyone can create friend requests" ON friend_requests
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Anyone can update friend requests" ON friend_requests
+  FOR UPDATE USING (true);
 
 -- Rooms: Herkes görebilir, sadece host güncelleyebilir
 DROP POLICY IF EXISTS "Rooms are publicly viewable" ON rooms;
@@ -184,18 +189,22 @@ DROP POLICY IF EXISTS "Votes can be deleted" ON votes;
 CREATE POLICY "Votes can be deleted" ON votes
   FOR DELETE USING (true);
 
--- Room invites: İlgili kullanıcılar görebilir
+-- Room invites: Herkese açık
 DROP POLICY IF EXISTS "Room invites visible to recipient" ON room_invites;
-CREATE POLICY "Room invites visible to recipient" ON room_invites
-  FOR SELECT USING (auth.uid()::text = to_user_id OR auth.uid()::text = from_user_id);
-
 DROP POLICY IF EXISTS "Users can create room invites" ON room_invites;
-CREATE POLICY "Users can create room invites" ON room_invites
-  FOR INSERT WITH CHECK (auth.uid()::text = from_user_id);
-
 DROP POLICY IF EXISTS "Users can update own invites" ON room_invites;
-CREATE POLICY "Users can update own invites" ON room_invites
-  FOR UPDATE USING (auth.uid()::text = to_user_id);
+DROP POLICY IF EXISTS "Anyone can view room invites" ON room_invites;
+DROP POLICY IF EXISTS "Anyone can create room invites" ON room_invites;
+DROP POLICY IF EXISTS "Anyone can update room invites" ON room_invites;
+
+CREATE POLICY "Anyone can view room invites" ON room_invites
+  FOR SELECT USING (true);
+
+CREATE POLICY "Anyone can create room invites" ON room_invites
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Anyone can update room invites" ON room_invites
+  FOR UPDATE USING (true);
 
 -- Enable Realtime (only add if not already added)
 DO $$
