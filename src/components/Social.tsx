@@ -700,7 +700,7 @@ export function Social({ currentUserId, currentUsername, roomId, currentRoomId, 
                                   <Gamepad2 className="w-3 h-3" />
                                   <span className="font-medium">{user.games_played || 0} oyun</span>
                                 </div>
-                                {user.wins > 0 && (
+                                {(user.wins ?? 0) > 0 && (
                                   <div className="flex items-center gap-1 text-xs text-red-500">
                                     <Swords className="w-3 h-3" />
                                     <span className="font-bold">{user.wins}</span>

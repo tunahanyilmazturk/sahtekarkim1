@@ -216,7 +216,7 @@ export function useOfflineGame() {
 
         if (tie || !votedOutId) {
           winner = 'impostor';
-          endMessage = `Berabere! Sahtekar (${impostor!.name}) kazandı! +${POINTS.TIE_IMPOSTOR} puan`;
+          endMessage = `Berabere! Sahtekar (${impostor!.name}) kazandı! +${POINTS.TIE} puan`;
         } else {
           const votedOut = prev.players.find(p => p.id === votedOutId);
           if (votedOut?.role === 'impostor') {

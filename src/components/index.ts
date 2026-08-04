@@ -1,3 +1,4 @@
+export { GameRoom } from './GameRoom';
 export { Menu } from './Menu';
 export { Auth } from './Auth';
 export { OnlineSetup } from './OnlineSetup';

@@ -3,14 +3,46 @@ import { motion } from 'motion/react';
 import { User, Lock, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { supabase, supabaseService } from '../lib/supabase';
 
-// Basit şifre hash fonksiyonu (Web Crypto API ile)
-// Gerçek üretimde bcrypt-js kullanın
-async function hashPassword(password: string): Promise<string> {
+const PBKDF2_ITERATIONS = 100000;
+const SALT_BYTES = 16;
+const HASH_BITS = 256;
+
+function generateSalt(): string {
+  const array = new Uint8Array(SALT_BYTES);
+  crypto.getRandomValues(array);
+  return Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function deriveHash(password: string, salt: string): Promise<string> {
   const encoder = new TextEncoder();
-  const data = encoder.encode(password + 'sahtekar_salt_v1');
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(password),
+    'PBKDF2',
+    false,
+    ['deriveBits']
+  );
+  const derivedBits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt: encoder.encode(salt), iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+    keyMaterial,
+    HASH_BITS
+  );
+  return Array.from(new Uint8Array(derivedBits)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function hashPassword(password: string): Promise<string> {
+  const salt = generateSalt();
+  const hash = await deriveHash(password, salt);
+  return `${salt}:${hash}`;
+}
+
+async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
+  const [salt, hash] = storedHash.split(':');
+  if (!salt || !hash) {
+    return storedHash === await deriveHash(password, 'sahtekar_salt_v1');
+  }
+  const computedHash = await deriveHash(password, salt);
+  return computedHash === hash;
 }
 
 interface AuthProps {
@@ -67,12 +99,10 @@ export function Auth({ onLogin, onBack }: AuthProps) {
 
       const existingUser = existingUsers && existingUsers.length > 0 ? existingUsers[0] : null;
 
-      // Şifreyi hash'le
-      const hashedPassword = await hashPassword(password);
-
       if (isLogin) {
         if (existingUser) {
-          if (existingUser.password === hashedPassword) {
+          const isValid = await verifyPassword(password, existingUser.password);
+          if (isValid) {
             setSuccessMsg('Giriş başarılı!');
             onLogin(existingUser.id, existingUser.username);
           } else {
@@ -85,6 +115,7 @@ export function Auth({ onLogin, onBack }: AuthProps) {
         if (existingUser) {
           setError('Bu kullanıcı adı zaten kullanılıyor');
         } else {
+          const hashedPassword = await hashPassword(password);
           const userId = `user_${Date.now()}_${Math.random().toString(36).substring(7)}`;
           await supabaseService.createUser(userId, username.trim(), hashedPassword);
           setSuccessMsg('Hesap oluşturuldu! Hoş geldiniz!');

@@ -13,7 +13,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 export interface User {
   id: string;
   username: string;
-  password: string;
+  password?: string;
   created_at: number;
   friends: string[];
   is_online?: boolean;
@@ -113,7 +113,7 @@ export const supabaseService = {
 
   async getUser(userId: string): Promise<User | null> {
     const { data, error } = await supabase
-      .from('users')
+      .from('public_users')
       .select('*')
       .eq('id', userId)
       .single();
@@ -123,12 +123,26 @@ export const supabaseService = {
 
   async getUserByUsername(username: string): Promise<User | null> {
     const { data, error } = await supabase
-      .from('users')
+      .from('public_users')
       .select('*')
       .eq('username', username)
       .single();
     if (error) return null;
     return data;
+  },
+
+  async loginViaRPC(username: string, passwordHash: string): Promise<User | null> {
+    const { data, error } = await supabase
+      .rpc('fn_login', { p_username: username, p_password_hash: passwordHash });
+    if (error || !data || data.length === 0) return null;
+    return data[0] as User;
+  },
+
+  async registerViaRPC(userId: string, username: string, passwordHash: string): Promise<User | null> {
+    const { data, error } = await supabase
+      .rpc('fn_register', { p_id: userId, p_username: username, p_password: passwordHash });
+    if (error || !data || data.length === 0) return null;
+    return data[0] as User;
   },
 
   async updateUserOnlineStatus(userId: string, isOnline: boolean): Promise<void> {
@@ -211,14 +225,14 @@ export const supabaseService = {
     const channel = supabase
       .channel('users-channel')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => {
-        supabase.from('users').select('*').then(({ data }) => {
+        supabase.from('public_users').select('*').then(({ data }) => {
           if (data) callback(data);
         });
       })
       .subscribe();
 
     // Initial fetch
-    supabase.from('users').select('*').then(({ data }) => {
+    supabase.from('public_users').select('*').then(({ data }) => {
       if (data) callback(data);
     });
 

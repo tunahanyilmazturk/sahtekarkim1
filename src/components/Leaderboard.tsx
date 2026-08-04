@@ -44,7 +44,7 @@ export function Leaderboard({ currentUserId, onClose }: LeaderboardProps) {
           wins: user.wins || 0,
           coins: user.coins || 0,
           avatar: user.avatar,
-          winRate: user.games_played > 0 ? Math.round((user.wins / user.games_played) * 100) : 0
+          winRate: (user.games_played ?? 0) > 0 ? Math.round(((user.wins ?? 0) / (user.games_played ?? 0)) * 100) : 0
         }))
         .filter(u => u.gamesPlayed > 0);
       
