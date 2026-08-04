@@ -265,6 +265,25 @@ export function Settings({ soundEnabled, onToggleSound, onLogout, userName, user
                         <p className="text-sm font-bold text-zinc-900">{notifications ? 'Açık' : 'Kapalı'}</p>
                       </div>
                     </motion.button>
+
+                    <motion.div
+                      whileTap={{ scale: 0.97 }}
+                      onClick={toggleDarkMode}
+                      className={`p-4 rounded-2xl flex items-center gap-3 transition-all col-span-2 cursor-pointer ${
+                        darkMode ? 'bg-indigo-50 border-2 border-indigo-200' : 'bg-zinc-50 border-2 border-zinc-200'
+                      }`}
+                    >
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                        darkMode ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg' : 'bg-zinc-200 text-zinc-400'
+                      }`}>
+                        <Moon className="w-6 h-6" />
+                      </div>
+                      <div className="text-left flex-1">
+                        <p className="text-xs text-zinc-500 font-medium">Tema</p>
+                        <p className="text-sm font-bold text-zinc-900">{darkMode ? 'Karanlık Mod' : 'Aydınlık Mod'}</p>
+                      </div>
+                      <Toggle value={darkMode} onChange={toggleDarkMode} />
+                    </motion.div>
                   </div>
 
                   {/* Settings Groups */}

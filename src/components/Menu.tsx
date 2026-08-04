@@ -170,7 +170,7 @@ export function Menu({
               </div>
             </div>
             <div>
-              <h1 className="font-black text-lg tracking-tight leading-none bg-gradient-to-r from-zinc-900 to-zinc-700 bg-clip-text text-transparent">
+              <h1 className="font-black text-lg tracking-tight leading-none bg-gradient-to-r from-zinc-900 to-zinc-700 dark:from-zinc-100 dark:to-zinc-400 bg-clip-text text-transparent">
                 SAHTEKAR
               </h1>
               <p className="text-xs text-zinc-500 font-medium">Kim?</p>
