@@ -222,8 +222,9 @@ export const supabaseService = {
 
   // Subscribe to users changes
   subscribeToUsers(callback: (users: User[]) => void): () => void {
+    const channelId = `users-channel-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const channel = supabase
-      .channel('users-channel')
+      .channel(channelId)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => {
         supabase.from('public_users').select('*').then(({ data }) => {
           if (data) callback(data);
@@ -275,8 +276,9 @@ export const supabaseService = {
 
   // Subscribe to friend requests changes
   subscribeToFriendRequests(userId: string, callback: (requests: FriendRequest[]) => void): () => void {
+    const channelId = `friend-requests-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const channel = supabase
-      .channel('friend-requests-channel')
+      .channel(channelId)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'friend_requests' }, () => {
         supabase.from('friend_requests').select('*')
           .or(`to_user_id.eq.${userId},from_user_id.eq.${userId}`)
@@ -341,8 +343,9 @@ export const supabaseService = {
 
   // Subscribe to room changes
   subscribeToRoom(roomId: string, callback: (room: Room | null) => void): () => void {
+    const channelId = `room-${roomId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const channel = supabase
-      .channel(`room-${roomId}`)
+      .channel(channelId)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` }, (payload) => {
         if (payload.eventType === 'DELETE') {
           callback(null);
@@ -406,8 +409,9 @@ export const supabaseService = {
 
   // Subscribe to players changes
   subscribeToPlayers(roomId: string, callback: (players: Player[]) => void): () => void {
+    const channelId = `players-${roomId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const channel = supabase
-      .channel(`players-${roomId}`)
+      .channel(channelId)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'players', filter: `room_id=eq.${roomId}` }, () => {
         supabase.from('players').select('*').eq('room_id', roomId).then(({ data }) => {
           if (data) callback(data);
@@ -435,8 +439,9 @@ export const supabaseService = {
 
   // Subscribe to messages changes
   subscribeToMessages(roomId: string, callback: (messages: Message[]) => void): () => void {
+    const channelId = `messages-${roomId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const channel = supabase
-      .channel(`messages-${roomId}`)
+      .channel(channelId)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` }, () => {
         supabase.from('messages').select('*').eq('room_id', roomId).order('created_at', { ascending: true }).then(({ data }) => {
           if (data) callback(data);
@@ -491,8 +496,9 @@ export const supabaseService = {
 
   // Subscribe to votes changes
   subscribeToVotes(roomId: string, callback: (votes: Vote[]) => void): () => void {
+    const channelId = `votes-${roomId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const channel = supabase
-      .channel(`votes-${roomId}`)
+      .channel(channelId)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'votes', filter: `room_id=eq.${roomId}` }, () => {
         supabase.from('votes').select('*').eq('room_id', roomId).then(({ data }) => {
           if (data) callback(data);
@@ -528,8 +534,9 @@ export const supabaseService = {
   },
 
   subscribeToRoomInvites(userId: string, callback: (invites: RoomInvite[]) => void) {
+    const channelId = `room_invites:${userId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const channel = supabase
-      .channel(`room_invites:${userId}`)
+      .channel(channelId)
       .on(
         'postgres_changes',
         {
