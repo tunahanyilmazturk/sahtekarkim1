@@ -110,6 +110,8 @@ GRANT EXECUTE ON FUNCTION fn_register(TEXT, TEXT, TEXT, TEXT) TO anon;
 --    Keep SELECT for anon (client-side auth needs to read password hash for verification)
 --    All non-auth queries should use public_users view instead
 DROP POLICY IF EXISTS "Anyone can view users" ON users;
+DROP POLICY IF EXISTS "Anyone can insert users" ON users;
+DROP POLICY IF EXISTS "Anyone can update users" ON users;
 
 CREATE POLICY "Anyone can view users" ON users
   FOR SELECT USING (true);
