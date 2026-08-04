@@ -53,16 +53,16 @@ export function OnlineSetup({ playerName, onPlayerNameChange, roomId, onRoomIdCh
   return (
     <motion.div 
       initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-      className="flex flex-col h-[100dvh] bg-white"
+      className="flex flex-col h-[100dvh] bg-white dark:bg-zinc-950"
     >
-      <div className="p-4 pt-safe flex items-center border-b border-zinc-100">
-        <button onClick={onBack} className="p-2 -ml-2 text-zinc-500 hover:text-zinc-900 rounded-full">
+      <div className="p-4 pt-safe flex items-center border-b border-zinc-100 dark:border-zinc-800">
+        <button onClick={onBack} className="p-2 -ml-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 rounded-full">
           <X className="w-6 h-6" />
         </button>
-        <h2 className="text-lg font-black text-zinc-900 ml-2">Online Lobi</h2>
+        <h2 className="text-lg font-black text-zinc-900 dark:text-zinc-100 ml-2">Online Lobi</h2>
         <button 
           onClick={() => setSettingsOpen(true)} 
-          className="ml-auto p-2 text-zinc-400 hover:text-zinc-900 rounded-full active:scale-90 transition-transform"
+          className="ml-auto p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 rounded-full active:scale-90 transition-transform"
         >
           <Settings2 className="w-6 h-6" />
         </button>

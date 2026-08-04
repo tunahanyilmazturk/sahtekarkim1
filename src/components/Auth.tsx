@@ -207,6 +207,7 @@ export function Auth({ onLogin, onBack }: AuthProps) {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Kullanıcı adı"
+                autoComplete="username"
                 className="w-full pl-12 pr-4 py-4 rounded-2xl bg-zinc-100 border-2 border-transparent focus:border-zinc-900 focus:bg-white transition-colors font-bold outline-none"
                 autoFocus
               />
@@ -219,6 +220,7 @@ export function Auth({ onLogin, onBack }: AuthProps) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Şifre"
+                autoComplete={isLogin ? 'current-password' : 'new-password'}
                 className="w-full pl-12 pr-12 py-4 rounded-2xl bg-zinc-100 border-2 border-transparent focus:border-zinc-900 focus:bg-white transition-colors font-bold outline-none"
               />
               <button

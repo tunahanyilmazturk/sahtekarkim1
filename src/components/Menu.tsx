@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import type { GameMode } from '../types';
 import { HowToPlay } from './HowToPlay';
+import { AchievementsPanel } from './AchievementsPanel';
 import { AvatarImage, getAvatarIdFromEmoji } from './AvatarImage';
 import { supabaseService } from '../lib/supabase';
 import { cn } from '../lib/utils';
@@ -37,6 +38,7 @@ export function Menu({
   pendingRoomInvites = [], onAcceptRoomInvite, onRejectRoomInvite
 }: MenuProps) {
   const [showHowToPlay, setShowHowToPlay] = useState(false);
+  const [showAchievements, setShowAchievements] = useState(false);
   const [quickJoinCode, setQuickJoinCode] = useState('');
   const [stats, setStats] = useState<UserStats>({
     gamesPlayed: 0, wins: 0, gamesPlayedAsImpostor: 0, impostorWins: 0,
@@ -436,6 +438,18 @@ export function Menu({
             </div>
           )}
 
+          {/* ── Başarımlar Butonu ──────────────────────────────────────────────────────────────── */}
+          {user && (
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowAchievements(true)}
+              className="w-full py-3 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-xl font-bold text-amber-700 dark:text-amber-400 flex items-center justify-center gap-2 hover:from-amber-100 hover:to-orange-100 dark:hover:from-amber-950/50 dark:hover:to-orange-950/50 transition-colors border border-amber-200 dark:border-amber-900/50"
+            >
+              <Award className="w-4 h-4" />
+              Başarımlar
+            </motion.button>
+          )}
+
           {/* ── Nasıl Oynanır ──────────────────────────────────────────────────────────────── */}
           <motion.button
             whileTap={{ scale: 0.98 }}
@@ -459,6 +473,12 @@ export function Menu({
 
       <AnimatePresence>
         {showHowToPlay && <HowToPlay onClose={() => setShowHowToPlay(false)} />}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showAchievements && user && (
+          <AchievementsPanel userId={user.id} onClose={() => setShowAchievements(false)} />
+        )}
       </AnimatePresence>
     </motion.div>
   );

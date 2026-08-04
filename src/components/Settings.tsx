@@ -11,6 +11,7 @@ import { HowToPlay } from './HowToPlay';
 import { AvatarImage, getAvatarIdFromEmoji } from './AvatarImage';
 import { supabaseService } from '../lib/supabase';
 import { CHANGELOG } from '../lib/changelog';
+import { useTheme } from '../hooks/useTheme';
 
 interface SettingsProps {
   soundEnabled: boolean;
@@ -35,7 +36,7 @@ export function Settings({ soundEnabled, onToggleSound, onLogout, userName, user
   const [section, setSection] = useState<Section>('main');
   const [notifications, setNotifications] = useState(true);
   const [vibration, setVibration]   = useState(true);
-  const [darkMode, setDarkMode]     = useState(false);
+  const { isDark: darkMode, toggleTheme: toggleDarkMode } = useTheme();
   const [autoReady, setAutoReady]   = useState(false);
   const [shareSuccess, setShareSuccess] = useState(false);
   const [editingName, setEditingName]   = useState(false);
@@ -48,8 +49,6 @@ export function Settings({ soundEnabled, onToggleSound, onLogout, userName, user
     if (saved !== null) setNotifications(JSON.parse(saved));
     const savedVib = localStorage.getItem('settings_vibration');
     if (savedVib !== null) setVibration(JSON.parse(savedVib));
-    const savedDark = localStorage.getItem('settings_darkMode');
-    if (savedDark !== null) setDarkMode(JSON.parse(savedDark));
     const savedAuto = localStorage.getItem('settings_autoReady');
     if (savedAuto !== null) setAutoReady(JSON.parse(savedAuto));
   }, []);
@@ -144,7 +143,7 @@ export function Settings({ soundEnabled, onToggleSound, onLogout, userName, user
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-gradient-to-br from-zinc-100 via-zinc-50 to-zinc-100 z-[100] overflow-hidden"
+        className="fixed inset-0 bg-gradient-to-br from-zinc-100 via-zinc-50 to-zinc-100 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950 z-[100] overflow-hidden"
         onClick={onClose}
       >
         {/* Animated Background */}
@@ -538,6 +537,23 @@ export function Settings({ soundEnabled, onToggleSound, onLogout, userName, user
                         </div>
                       </div>
                       <Toggle value={soundEnabled} onChange={onToggleSound} />
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-5 border border-indigo-100">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-14 h-14 rounded-xl flex items-center justify-center shadow-lg ${
+                          darkMode ? 'bg-gradient-to-br from-indigo-500 to-purple-600' : 'bg-zinc-200'
+                        }`}>
+                          <Moon className={`w-7 h-7 ${darkMode ? 'text-white' : 'text-zinc-400'}`} />
+                        </div>
+                        <div>
+                          <p className="font-bold text-lg text-zinc-900">Karanlık Mod</p>
+                          <p className="text-sm text-zinc-500">Gözleri yormaz</p>
+                        </div>
+                      </div>
+                      <Toggle value={darkMode} onChange={toggleDarkMode} />
                     </div>
                   </div>
                 </div>

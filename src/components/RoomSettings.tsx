@@ -66,7 +66,7 @@ export function RoomSettings({ isOpen, onClose, settings = DEFAULT_SETTINGS, onS
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <div className="p-4 bg-white">
+            <div className="p-4 bg-white dark:bg-zinc-900">
               {children}
             </div>
           </motion.div>
@@ -88,7 +88,7 @@ export function RoomSettings({ isOpen, onClose, settings = DEFAULT_SETTINGS, onS
         initial={{ scale: 0.9, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.9, y: 20 }}
-        className="bg-white w-full max-w-md rounded-[2rem] overflow-hidden shadow-2xl"
+        className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-[2rem] overflow-hidden shadow-2xl"
       >
         <div className="p-4 bg-gradient-to-r from-red-500 to-red-600 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -103,7 +103,7 @@ export function RoomSettings({ isOpen, onClose, settings = DEFAULT_SETTINGS, onS
           </button>
         </div>
 
-        <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
+        <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto bg-white dark:bg-zinc-900">
           <Section id="categories" title="Kategoriler" icon={Shuffle}>
             <div className="flex justify-end mb-2">
               <button
@@ -222,10 +222,10 @@ export function RoomSettings({ isOpen, onClose, settings = DEFAULT_SETTINGS, onS
           </Section>
         </div>
 
-        <div className="p-4 bg-zinc-50 border-t border-zinc-200 flex gap-3">
+        <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 border-t border-zinc-200 dark:border-zinc-800 flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-4 bg-zinc-200 text-zinc-700 rounded-2xl font-bold hover:bg-zinc-300 transition-colors"
+            className="flex-1 py-4 bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-2xl font-bold hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
           >
             İptal
           </button>

@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { useGame } from './hooks';
 import { useOfflineGame } from './hooks/useOfflineGame';
 import { useSound } from './hooks/useSound';
+import { useTheme } from './hooks/useTheme';
 import { useToast } from './components/Toast';
 import { supabaseService } from './lib/supabase';
 import { GameRoom } from './components/GameRoom';
@@ -12,6 +13,7 @@ const OnlineSetup = lazy(() => import('./components/OnlineSetup').then(m => ({ d
 const OfflineSetup = lazy(() => import('./components/OfflineSetup').then(m => ({ default: m.OfflineSetup })));
 const OfflineRoom = lazy(() => import('./components/OfflineRoom').then(m => ({ default: m.OfflineRoom })));
 const BottomNav = lazy(() => import('./components/BottomNav').then(m => ({ default: m.BottomNav })));
+const Settings = lazy(() => import('./components/Settings').then(m => ({ default: m.Settings })));
 
 function Loading() {
   return (
@@ -27,8 +29,10 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; avatar?: string } | null>(null);
 
   const { playSound, enabled: soundEnabled, toggleSound } = useSound();
+  const { isDark, toggleTheme } = useTheme();
   const offlineGame = useOfflineGame();
   const { showToast } = useToast();
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('sahtekar_user');
@@ -185,7 +189,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-white font-sans text-zinc-900 selection:bg-red-200">
+    <div className="min-h-[100dvh] bg-white dark:bg-zinc-950 font-sans text-zinc-900 dark:text-zinc-100 selection:bg-red-200 dark:selection:bg-red-900">
       <Suspense fallback={<Loading />}>
         {mode === 'menu' && (
           <>
@@ -204,7 +208,7 @@ export default function App() {
               soundEnabled={soundEnabled}
               onToggleSound={toggleSound}
               onShowHowToPlay={() => {}}
-              onShowSettings={() => showToast('Yakında!', 'info')}
+              onShowSettings={() => setShowSettings(true)}
               currentUser={currentUser}
               onLogout={handleLogout}
             />
@@ -296,6 +300,18 @@ export default function App() {
             setMode('menu');
           }}
         />
+      )}
+      {showSettings && (
+        <Suspense fallback={<Loading />}>
+          <Settings
+            soundEnabled={soundEnabled}
+            onToggleSound={toggleSound}
+            onLogout={handleLogout}
+            userName={currentUser?.name}
+            userId={currentUser?.id}
+            onClose={() => setShowSettings(false)}
+          />
+        </Suspense>
       )}
     </div>
   );

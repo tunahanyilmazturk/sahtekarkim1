@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-primary: #dc2626;
   --color-primary-dark: #b91c1c;
@@ -7,6 +9,11 @@
   --color-accent: #f59e0b;
   --color-surface: #fafafa;
   --color-surface-elevated: #ffffff;
+}
+
+.dark {
+  --color-surface: #0a0a0b;
+  --color-surface-elevated: #18181b;
 }
 
 @layer utilities {
@@ -21,6 +28,10 @@
     background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
+  }
+  
+  .dark .glass {
+    background: rgba(24, 24, 27, 0.85);
   }
   
   .text-gradient {
@@ -80,6 +91,33 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
 html, body {
   overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
+}
+
+.dark body {
+  background: #0a0a0b;
+}
+
+input, textarea, select {
+  font-size: 16px;
+}
+
+@supports (padding: env(safe-area-inset-bottom)) {
+  .pb-safe {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+  .pt-safe {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
 }

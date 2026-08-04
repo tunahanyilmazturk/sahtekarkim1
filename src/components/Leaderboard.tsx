@@ -20,6 +20,13 @@ interface LeaderboardEntry {
 }
 
 type Category = 'wins' | 'winRate' | 'games' | 'coins';
+type Period = 'all' | 'monthly' | 'weekly';
+
+const periodConfig: Record<Period, { label: string; days: number }> = {
+  all: { label: 'Tüm Zamanlar', days: 0 },
+  monthly: { label: 'Bu Ay', days: 30 },
+  weekly: { label: 'Bu Hafta', days: 7 },
+};
 
 const categoryConfig = {
   wins: { label: 'Galibiyet', icon: Trophy, color: 'from-yellow-400 to-amber-500' },
@@ -32,11 +39,19 @@ export function Leaderboard({ currentUserId, onClose }: LeaderboardProps) {
   const [leaders, setLeaders] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState<Category>('wins');
+  const [period, setPeriod] = useState<Period>('all');
   const [currentUserRank, setCurrentUserRank] = useState<number | null>(null);
 
   useEffect(() => {
     const unsub = supabaseService.subscribeToUsers((users) => {
-      const leaderboard = users
+      let filtered = users;
+
+      if (period !== 'all') {
+        const cutoff = Date.now() - periodConfig[period].days * 24 * 60 * 60 * 1000;
+        filtered = users.filter(u => (u.created_at ?? 0) >= cutoff);
+      }
+
+      const leaderboard = filtered
         .map(user => ({
           id: user.id,
           username: user.username || 'Anonim',
@@ -51,7 +66,6 @@ export function Leaderboard({ currentUserId, onClose }: LeaderboardProps) {
       setLeaders(leaderboard);
       setLoading(false);
 
-      // Find current user's rank
       if (currentUserId) {
         const sorted = [...leaderboard].sort((a, b) => b.wins - a.wins);
         const rank = sorted.findIndex(u => u.id === currentUserId) + 1;
@@ -59,7 +73,7 @@ export function Leaderboard({ currentUserId, onClose }: LeaderboardProps) {
       }
     });
     return () => unsub();
-  }, [currentUserId]);
+  }, [currentUserId, period]);
 
   const getSortedLeaders = () => {
     const sorted = [...leaders];
@@ -180,6 +194,23 @@ export function Leaderboard({ currentUserId, onClose }: LeaderboardProps) {
               </motion.button>
             );
           })}
+        </div>
+
+        {/* Period Tabs */}
+        <div className="relative flex gap-2 px-4 py-2 bg-white/40 backdrop-blur-sm border-b border-zinc-200/50">
+          {(Object.keys(periodConfig) as Period[]).map((p) => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={`flex-1 py-1.5 rounded-lg font-bold text-xs transition-all ${
+                period === p
+                  ? 'bg-zinc-900 text-white'
+                  : 'bg-white text-zinc-500 hover:bg-zinc-100'
+              }`}
+            >
+              {periodConfig[p].label}
+            </button>
+          ))}
         </div>
 
         {/* Content */}
