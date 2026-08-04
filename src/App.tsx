@@ -3,7 +3,6 @@ import { Loader2 } from 'lucide-react';
 import { useGame } from './hooks';
 import { useOfflineGame } from './hooks/useOfflineGame';
 import { useSound } from './hooks/useSound';
-import { useTheme } from './hooks/useTheme';
 import { useToast } from './components/Toast';
 import { supabaseService } from './lib/supabase';
 import { GameRoom } from './components/GameRoom';
@@ -29,7 +28,6 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; avatar?: string } | null>(null);
 
   const { playSound, enabled: soundEnabled, toggleSound } = useSound();
-  const { isDark, toggleTheme } = useTheme();
   const offlineGame = useOfflineGame();
   const { showToast } = useToast();
   const [showSettings, setShowSettings] = useState(false);
@@ -189,7 +187,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-white dark:bg-zinc-950 font-sans text-zinc-900 dark:text-zinc-100 selection:bg-red-200 dark:selection:bg-red-900">
+    <div className="min-h-[100dvh] bg-white font-sans text-zinc-900 selection:bg-red-200">
       <Suspense fallback={<Loading />}>
         {mode === 'menu' && (
           <>
@@ -211,6 +209,7 @@ export default function App() {
               onShowSettings={() => setShowSettings(true)}
               currentUser={currentUser}
               onLogout={handleLogout}
+              notificationCount={pendingRoomInvites.length}
             />
           </>
         )}

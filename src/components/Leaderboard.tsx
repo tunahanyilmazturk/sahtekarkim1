@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trophy, Crown, Medal, X, Swords, Gamepad2, Target, TrendingUp, CircleDollarSign, Award, Star, Flame, Zap } from 'lucide-react';
+import { Trophy, Crown, Medal, X, Swords, Gamepad2, Target, TrendingUp, CircleDollarSign, Award, Star, Flame, Zap, Sparkles } from 'lucide-react';
 import { supabaseService } from '../lib/supabase';
 import { AvatarImage } from './AvatarImage';
 
@@ -17,6 +17,8 @@ interface LeaderboardEntry {
   coins: number;
   avatar?: string;
   winRate: number;
+  xp: number;
+  isOnline: boolean;
 }
 
 type Category = 'wins' | 'winRate' | 'games' | 'coins';
@@ -34,6 +36,16 @@ const categoryConfig = {
   games: { label: 'Oyun', icon: Gamepad2, color: 'from-purple-400 to-pink-500' },
   coins: { label: 'Coin', icon: CircleDollarSign, color: 'from-green-400 to-emerald-500' }
 };
+
+const RANKS = [
+  { name: 'Çaylak',   icon: '🌱', minXP: 0 },
+  { name: 'Acemi',    icon: '⚔️',  minXP: 100 },
+  { name: 'Usta',     icon: '🛡️',  minXP: 300 },
+  { name: 'Uzman',    icon: '🔥',  minXP: 700 },
+  { name: 'Efsane',   icon: '👑',  minXP: 1500 },
+  { name: 'Tanrısal', icon: '💎',  minXP: 3000 },
+];
+const getRank = (xp: number) => RANKS.slice().reverse().find(r => xp >= r.minXP) ?? RANKS[0];
 
 export function Leaderboard({ currentUserId, onClose }: LeaderboardProps) {
   const [leaders, setLeaders] = useState<LeaderboardEntry[]>([]);
@@ -59,7 +71,9 @@ export function Leaderboard({ currentUserId, onClose }: LeaderboardProps) {
           wins: user.wins || 0,
           coins: user.coins || 0,
           avatar: user.avatar,
-          winRate: (user.games_played ?? 0) > 0 ? Math.round(((user.wins ?? 0) / (user.games_played ?? 0)) * 100) : 0
+          winRate: (user.games_played ?? 0) > 0 ? Math.round(((user.wins ?? 0) / (user.games_played ?? 0)) * 100) : 0,
+          xp: (user.wins || 0) * 10 + (user.games_played || 0) * 2,
+          isOnline: user.is_online || false,
         }))
         .filter(u => u.gamesPlayed > 0);
       
@@ -67,13 +81,18 @@ export function Leaderboard({ currentUserId, onClose }: LeaderboardProps) {
       setLoading(false);
 
       if (currentUserId) {
-        const sorted = [...leaderboard].sort((a, b) => b.wins - a.wins);
-        const rank = sorted.findIndex(u => u.id === currentUserId) + 1;
+        const sortedForRank = [...leaderboard].sort((a, b) => {
+          if (category === 'winRate') return b.winRate - a.winRate;
+          if (category === 'games') return b.gamesPlayed - a.gamesPlayed;
+          if (category === 'coins') return b.coins - a.coins;
+          return b.wins - a.wins;
+        });
+        const rank = sortedForRank.findIndex(u => u.id === currentUserId) + 1;
         setCurrentUserRank(rank > 0 ? rank : null);
       }
     });
     return () => unsub();
-  }, [currentUserId, period]);
+  }, [currentUserId, period, category]);
 
   const getSortedLeaders = () => {
     const sorted = [...leaders];
@@ -204,7 +223,7 @@ export function Leaderboard({ currentUserId, onClose }: LeaderboardProps) {
               onClick={() => setPeriod(p)}
               className={`flex-1 py-1.5 rounded-lg font-bold text-xs transition-all ${
                 period === p
-                  ? 'bg-zinc-900 text-white'
+                  ? 'bg-gradient-to-r from-orange-400 to-red-400 text-white shadow-md shadow-orange-500/20'
                   : 'bg-white text-zinc-500 hover:bg-zinc-100'
               }`}
             >
@@ -214,7 +233,7 @@ export function Leaderboard({ currentUserId, onClose }: LeaderboardProps) {
         </div>
 
         {/* Content */}
-        <div className="relative flex-1 overflow-y-auto p-4 pb-20">
+        <div className="relative flex-1 overflow-y-auto p-4 pb-4">
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <div className="text-center">
@@ -264,19 +283,29 @@ export function Leaderboard({ currentUserId, onClose }: LeaderboardProps) {
                             whileHover={{ scale: 1.05 }}
                             className="relative mb-2"
                           >
+                            {isFirst && (
+                              <motion.div
+                                animate={{ opacity: [0.3, 0.6, 0.3] }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                                className="absolute -inset-3 bg-yellow-400 rounded-full blur-xl"
+                              />
+                            )}
                             <AvatarImage
                               avatarId={player.avatar || 'avatar_default_1'}
                               size={isFirst ? 72 : isSecond ? 60 : 52}
-                              className={`ring-4 ${
+                              className={`relative ring-4 ${
                                 isFirst ? 'ring-yellow-400' : isSecond ? 'ring-zinc-300' : 'ring-amber-600'
                               } ring-offset-2 shadow-xl`}
                             />
+                            {player.isOnline && (
+                              <span className="absolute bottom-1 right-1 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full z-10" />
+                            )}
                             {rankBadge && (
                               <motion.div
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
                                 transition={{ delay: 0.5 + podiumIndex * 0.1, type: 'spring' }}
-                                className={`absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br ${rankBadge.bg} ${rankBadge.text} rounded-full flex items-center justify-center shadow-lg`}
+                                className={`absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br ${rankBadge.bg} ${rankBadge.text} rounded-full flex items-center justify-center shadow-lg z-10`}
                               >
                                 <rankBadge.icon className="w-4 h-4" />
                               </motion.div>
@@ -284,9 +313,14 @@ export function Leaderboard({ currentUserId, onClose }: LeaderboardProps) {
                           </motion.div>
 
                           {/* Name */}
-                          <p className={`font-bold text-sm mb-1 ${isFirst ? 'text-yellow-700' : isSecond ? 'text-zinc-700' : 'text-amber-800'}`}>
+                          <p className={`font-bold text-sm mb-0.5 ${isFirst ? 'text-yellow-700' : isSecond ? 'text-zinc-700' : 'text-amber-800'}`}>
                             {player.username}
                           </p>
+
+                          {/* Rank Badge */}
+                          <span className="text-[10px] font-bold text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded-full mb-1.5">
+                            {getRank(player.xp).icon} {getRank(player.xp).name}
+                          </span>
 
                           {/* Stats */}
                           <div className="flex items-center gap-1 text-xs font-bold mb-2">
@@ -365,18 +399,28 @@ export function Leaderboard({ currentUserId, onClose }: LeaderboardProps) {
                         </div>
 
                         {/* Avatar */}
-                        <AvatarImage
-                          avatarId={player.avatar || 'avatar_default_1'}
-                          size={40}
-                          className={isCurrentUser ? 'ring-2 ring-red-400' : ''}
-                        />
+                        <div className="relative">
+                          <AvatarImage
+                            avatarId={player.avatar || 'avatar_default_1'}
+                            size={40}
+                            className={isCurrentUser ? 'ring-2 ring-red-400' : ''}
+                          />
+                          {player.isOnline && (
+                            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
+                          )}
+                        </div>
 
                         {/* Info */}
                         <div className="flex-1 min-w-0">
-                          <p className={`font-bold truncate ${isCurrentUser ? 'text-red-700' : 'text-zinc-900'}`}>
-                            {player.username}
-                            {isCurrentUser && <span className="ml-1 text-xs">(Sen)</span>}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className={`font-bold truncate ${isCurrentUser ? 'text-red-700' : 'text-zinc-900'}`}>
+                              {player.username}
+                              {isCurrentUser && <span className="ml-1 text-xs">(Sen)</span>}
+                            </p>
+                            <span className="text-[9px] font-bold text-zinc-500 bg-zinc-100 px-1.5 py-0.5 rounded-full shrink-0">
+                              {getRank(player.xp).icon}
+                            </span>
+                          </div>
                           <div className="flex items-center gap-2 mt-0.5">
                             <div className="flex items-center gap-1 text-xs text-zinc-500">
                               <Gamepad2 className="w-3 h-3" />
@@ -427,36 +471,49 @@ export function Leaderboard({ currentUserId, onClose }: LeaderboardProps) {
                   })}
                 </div>
               )}
-
-              {/* Current User Rank Card */}
-              {currentUserRank && currentUserRank > 3 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mt-4 p-4 bg-gradient-to-r from-red-500 to-orange-500 rounded-2xl shadow-xl shadow-red-500/30 text-white"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                        <span className="text-xl font-black">#{currentUserRank}</span>
-                      </div>
-                      <div>
-                        <p className="font-bold">Sıralaman</p>
-                        <p className="text-xs text-white/80">Toplam {leaders.length} oyuncu arasından</p>
-                      </div>
-                    </div>
-                    <motion.div
-                      animate={{ rotate: [0, 10, -10, 0] }}
-                      transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
-                    >
-                      <Star className="w-8 h-8 text-yellow-300" />
-                    </motion.div>
-                  </div>
-                </motion.div>
-              )}
             </>
           )}
         </div>
+
+        {/* Sticky Your Rank Footer */}
+        {currentUserRank && !loading && leaders.length > 0 && (
+          <motion.div
+            initial={{ y: 60, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="relative px-4 py-3 bg-white/90 backdrop-blur-md border-t border-zinc-200/50 shrink-0"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg ${
+                  currentUserRank <= 3
+                    ? 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white shadow-lg shadow-yellow-500/30'
+                    : 'bg-gradient-to-br from-red-500 to-orange-500 text-white shadow-lg shadow-red-500/30'
+                }`}>
+                  #{currentUserRank}
+                </div>
+                <div>
+                  <p className="font-bold text-zinc-900 text-sm">Sıralaman</p>
+                  <p className="text-xs text-zinc-500">
+                    {currentUserRank <= 3 ? '🏆 Podiumda!' : `Toplam ${leaders.length} oyuncu arasından`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-zinc-500 bg-zinc-100 px-2.5 py-1.5 rounded-xl flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-yellow-500" />
+                  {leaders.find(l => l.id === currentUserId)?.xp || 0} XP
+                </span>
+                <motion.div
+                  animate={{ rotate: [0, 10, -10, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+                >
+                  <Star className="w-6 h-6 text-yellow-400" />
+                </motion.div>
+              </div>
+            </div>
+          </motion.div>
+        )}
       </div>
     </motion.div>
   );

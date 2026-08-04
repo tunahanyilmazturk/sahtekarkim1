@@ -170,6 +170,18 @@ export const supabaseService = {
     if (error) console.error('updateUserAvatar error:', error);
   },
 
+  async updateUsername(userId: string, newName: string): Promise<boolean> {
+    const { error } = await supabase
+      .from('users')
+      .update({ username: newName })
+      .eq('id', userId);
+    if (error) {
+      console.error('updateUsername error:', error);
+      return false;
+    }
+    return true;
+  },
+
   async purchaseAvatar(userId: string, avatarId: string, price: number): Promise<{ success: boolean; message: string }> {
     // Önce kullanıcıyı getir
     const { data: user, error: fetchError } = await supabase

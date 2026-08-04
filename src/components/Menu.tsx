@@ -170,7 +170,7 @@ export function Menu({
               </div>
             </div>
             <div>
-              <h1 className="font-black text-lg tracking-tight leading-none bg-gradient-to-r from-zinc-900 to-zinc-700 dark:from-zinc-100 dark:to-zinc-400 bg-clip-text text-transparent">
+              <h1 className="font-black text-lg tracking-tight leading-none bg-gradient-to-r from-zinc-900 to-zinc-700 bg-clip-text text-transparent">
                 SAHTEKAR
               </h1>
               <p className="text-xs text-zinc-500 font-medium">Kim?</p>
@@ -443,7 +443,7 @@ export function Menu({
             <motion.button
               whileTap={{ scale: 0.98 }}
               onClick={() => setShowAchievements(true)}
-              className="w-full py-3 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-xl font-bold text-amber-700 dark:text-amber-400 flex items-center justify-center gap-2 hover:from-amber-100 hover:to-orange-100 dark:hover:from-amber-950/50 dark:hover:to-orange-950/50 transition-colors border border-amber-200 dark:border-amber-900/50"
+              className="w-full py-3 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl font-bold text-amber-700 flex items-center justify-center gap-2 hover:from-amber-100 hover:to-orange-100 transition-colors border border-amber-200"
             >
               <Award className="w-4 h-4" />
               Başarımlar

@@ -69,27 +69,27 @@ export function AchievementsPanel({ userId, onClose }: AchievementsPanelProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-gradient-to-br from-zinc-100 via-zinc-50 to-zinc-100 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950 z-[100] overflow-hidden"
+      className="fixed inset-0 bg-gradient-to-br from-zinc-100 via-zinc-50 to-zinc-100 z-[100] overflow-hidden"
     >
       <div className="absolute inset-0 overflow-y-auto pt-safe pb-safe">
         <div className="max-w-md mx-auto min-h-full flex flex-col">
 
-          <div className="sticky top-0 z-10 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border-b border-zinc-200/50 dark:border-zinc-800/50 px-4 py-3 pt-safe flex items-center justify-between">
+          <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b border-zinc-200/50 px-4 py-3 pt-safe flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
                 <Trophy className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h2 className="text-lg font-black text-zinc-900 dark:text-zinc-100">Başarımlar</h2>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">{unlockedCount}/{ACHIEVEMENTS.length} açık · {totalReward} coin kazanıldı</p>
+                <h2 className="text-lg font-black text-zinc-900">Başarımlar</h2>
+                <p className="text-xs text-zinc-500">{unlockedCount}/{ACHIEVEMENTS.length} açık · {totalReward} coin kazanıldı</p>
               </div>
             </div>
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={onClose}
-              className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-zinc-100 transition-colors"
             >
-              <X className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
+              <X className="w-5 h-5 text-zinc-600" />
             </motion.button>
           </div>
 
@@ -111,36 +111,36 @@ export function AchievementsPanel({ userId, onClose }: AchievementsPanelProps) {
                     transition={{ delay: index * 0.05 }}
                     className={`relative rounded-2xl p-4 border transition-all ${
                       isUnlocked
-                        ? 'bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border-amber-200 dark:border-amber-900/50'
-                        : 'bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'
+                        ? 'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200'
+                        : 'bg-zinc-50 border-zinc-200'
                     }`}
                   >
                     <div className="flex items-start gap-3">
                       <div className={`relative w-14 h-14 rounded-xl flex items-center justify-center text-2xl shrink-0 ${
                         isUnlocked
                           ? `bg-gradient-to-br ${CATEGORY_COLORS[achievement.category]} shadow-lg`
-                          : 'bg-zinc-200 dark:bg-zinc-800 grayscale'
+                          : 'bg-zinc-200 grayscale'
                       }`}>
                         {isUnlocked ? achievement.icon : <Lock className="w-6 h-6 text-zinc-400" />}
                       </div>
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <h3 className={`font-bold text-sm ${isUnlocked ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-500 dark:text-zinc-400'}`}>
+                          <h3 className={`font-bold text-sm ${isUnlocked ? 'text-zinc-900' : 'text-zinc-500'}`}>
                             {achievement.title}
                           </h3>
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                             isUnlocked
-                              ? 'bg-amber-200 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300'
-                              : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-500'
+                              ? 'bg-amber-200 text-amber-700'
+                              : 'bg-zinc-200 text-zinc-500'
                           }`}>
                             {CATEGORY_LABELS[achievement.category]}
                           </span>
                         </div>
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{achievement.description}</p>
+                        <p className="text-xs text-zinc-500 mt-0.5">{achievement.description}</p>
 
                         <div className="mt-2 flex items-center gap-2">
-                          <div className="flex-1 h-2 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                          <div className="flex-1 h-2 bg-zinc-200 rounded-full overflow-hidden">
                             <motion.div
                               initial={{ width: 0 }}
                               animate={{ width: `${progress}%` }}
@@ -148,15 +148,15 @@ export function AchievementsPanel({ userId, onClose }: AchievementsPanelProps) {
                               className={`h-full rounded-full ${
                                 isUnlocked
                                   ? `bg-gradient-to-r ${CATEGORY_COLORS[achievement.category]}`
-                                  : 'bg-zinc-400 dark:bg-zinc-600'
+                                  : 'bg-zinc-400'
                               }`}
                             />
                           </div>
-                          <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 shrink-0">{progress}%</span>
+                          <span className="text-[10px] font-bold text-zinc-500 shrink-0">{progress}%</span>
                         </div>
 
                         {isUnlocked && (
-                          <div className="mt-1.5 flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400">
+                          <div className="mt-1.5 flex items-center gap-1 text-xs font-bold text-amber-600">
                             <Coins className="w-3 h-3" />
                             <span>+{achievement.reward} coin</span>
                           </div>

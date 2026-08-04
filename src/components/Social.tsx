@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Users, UserPlus, UserMinus, X, Check, Search, Send, Bell, Gamepad2, Swords, Crown, LogIn, Clock, DoorOpen, Trophy, Target, TrendingUp, CircleDollarSign } from 'lucide-react';
+import { Users, UserPlus, UserMinus, X, Check, Search, Send, Bell, Gamepad2, Swords, Crown, LogIn, Clock, DoorOpen, Trophy, Target, TrendingUp, CircleDollarSign, Sparkles, Share2, Zap, Flame } from 'lucide-react';
 import { supabaseService } from '../lib/supabase';
 import { AvatarImage } from './AvatarImage';
 import type { User, FriendRequest } from '../lib/supabase';
@@ -24,6 +24,10 @@ export function Social({ currentUserId, currentUsername, roomId, currentRoomId, 
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [sentInvites, setSentInvites] = useState<Set<string>>(new Set());
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [profileCopied, setProfileCopied] = useState(false);
+  const [sortBy, setSortBy] = useState<'wins' | 'games' | 'coins'>('wins');
+  const [activeTabIndex, setActiveTabIndex] = useState(0);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   // Update online status periodically
   useEffect(() => {
@@ -121,6 +125,29 @@ export function Social({ currentUserId, currentUsername, roomId, currentRoomId, 
 
   const pendingRequests = Object.entries(friendRequests).filter(([, req]) => req.status === 'pending');
 
+  const RANKS = [
+    { name: 'Çaylak',   icon: '🌱', minXP: 0 },
+    { name: 'Acemi',    icon: '⚔️',  minXP: 100 },
+    { name: 'Usta',     icon: '🛡️',  minXP: 300 },
+    { name: 'Uzman',    icon: '🔥',  minXP: 700 },
+    { name: 'Efsane',   icon: '👑',  minXP: 1500 },
+    { name: 'Tanrısal', icon: '💎',  minXP: 3000 },
+  ];
+  const getRank = (xp: number) => RANKS.slice().reverse().find(r => xp >= r.minXP) ?? RANKS[0];
+  const getXP = (u: User) => (u.wins || 0) * 10 + (u.games_played || 0) * 2;
+
+  const myXP = currentUser ? getXP(currentUser) : 0;
+  const myRank = getRank(myXP);
+  const myWinRate = currentUser && (currentUser.games_played || 0) > 0
+    ? Math.round(((currentUser.wins || 0) / (currentUser.games_played || 1)) * 100)
+    : 0;
+
+  const copyMyProfileLink = () => {
+    navigator.clipboard.writeText(`${window.location.origin}?user=${currentUserId}`);
+    setProfileCopied(true);
+    setTimeout(() => setProfileCopied(false), 2000);
+  };
+
   const topPlayers = Object.entries(allUsers)
     .filter(([id]) => id !== currentUserId)
     .map(([id, user]) => ({
@@ -128,10 +155,15 @@ export function Social({ currentUserId, currentUsername, roomId, currentRoomId, 
       username: user.username,
       gamesPlayed: user.games_played || 0,
       wins: user.wins || 0,
-      coins: user.coins || 0
+      coins: user.coins || 0,
+      isOnline: user.is_online || false,
     }))
-    .filter(p => p.gamesPlayed > 0)
-    .sort((a, b) => b.wins - a.wins)
+    .filter(p => p.gamesPlayed > 0 || p.wins > 0)
+    .sort((a, b) => {
+      if (sortBy === 'games') return b.gamesPlayed - a.gamesPlayed;
+      if (sortBy === 'coins') return b.coins - a.coins;
+      return b.wins - a.wins;
+    })
     .slice(0, 10);
 
   const availableUsers = Object.entries(allUsers)
@@ -238,22 +270,43 @@ export function Social({ currentUserId, currentUsername, roomId, currentRoomId, 
                 <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-zinc-900 truncate">{currentUser.username}</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-bold text-zinc-900 truncate">{currentUser.username}</p>
+                  <span className="text-xs font-bold text-zinc-600 bg-zinc-100 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+                    {myRank.icon} {myRank.name}
+                  </span>
+                </div>
                 <div className="flex items-center gap-3 mt-1">
+                  <div className="flex items-center gap-1 text-xs text-zinc-600">
+                    <Sparkles className="w-3 h-3 text-yellow-500" />
+                    <span className="font-semibold">{myXP} XP</span>
+                  </div>
                   <div className="flex items-center gap-1 text-xs text-zinc-600">
                     <Users className="w-3 h-3" />
                     <span className="font-semibold">{friends.length}</span>
                   </div>
                   <div className="flex items-center gap-1 text-xs text-zinc-600">
                     <Trophy className="w-3 h-3 text-yellow-500" />
-                    <span className="font-semibold">{currentUser.wins || 0}</span>
+                    <span className="font-semibold">{currentUser.wins || 0}W</span>
                   </div>
                   <div className="flex items-center gap-1 text-xs text-zinc-600">
-                    <CircleDollarSign className="w-3 h-3 text-green-500" />
-                    <span className="font-semibold">{currentUser.coins || 0}</span>
+                    <Target className="w-3 h-3 text-green-500" />
+                    <span className="font-semibold">{myWinRate}%</span>
                   </div>
                 </div>
               </div>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={copyMyProfileLink}
+                className={`p-2.5 rounded-xl transition-all shrink-0 ${
+                  profileCopied
+                    ? 'bg-green-100 text-green-600'
+                    : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200'
+                }`}
+                title="Profil linkini kopyala"
+              >
+                {profileCopied ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
+              </motion.button>
             </div>
           </div>
         )}
@@ -263,35 +316,36 @@ export function Social({ currentUserId, currentUsername, roomId, currentRoomId, 
           {tabs.map((tab, index) => (
             <motion.button
               key={tab.key}
+              ref={(el) => { tabRefs.current[index] = el; }}
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              onClick={() => setActiveTab(tab.key)}
+              onClick={() => { setActiveTab(tab.key); setActiveTabIndex(index); }}
               className={`flex-1 py-3 font-bold text-xs whitespace-nowrap px-2 flex items-center justify-center gap-1.5 relative ${
                 activeTab === tab.key 
                   ? 'text-red-500' 
                   : 'text-zinc-500 hover:text-zinc-700'
               }`}
             >
-              <tab.icon className={`w-4 h-4 ${activeTab === tab.key ? 'stroke-[2.5]' : ''}`} />
-              <span>{tab.label}</span>
+              {activeTab === tab.key && (
+                <motion.div
+                  layoutId="tab-pill"
+                  className="absolute inset-0 bg-red-50 rounded-lg mx-1"
+                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                />
+              )}
+              <tab.icon className={`w-4 h-4 relative z-10 ${activeTab === tab.key ? 'stroke-[2.5]' : ''}`} />
+              <span className="relative z-10">{tab.label}</span>
               {tab.count !== undefined && tab.count > 0 && (
                 <motion.span
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                  className={`relative z-10 text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
                     tab.highlight ? 'bg-red-500 text-white' : 'bg-zinc-200 text-zinc-700'
                   }`}
                 >
                   {tab.count}
                 </motion.span>
-              )}
-              {activeTab === tab.key && (
-                <motion.div
-                  layoutId="activeTab"
-                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-500"
-                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                />
               )}
             </motion.button>
           ))}
@@ -339,12 +393,15 @@ export function Social({ currentUserId, currentUsername, roomId, currentRoomId, 
                         {friends.filter(id => allUsers[id]?.is_online).map(friendId => {
                           const friend = allUsers[friendId];
                           const status = getFriendStatus(friendId);
+                          const friendWinRate = (friend?.games_played || 0) > 0
+                            ? Math.round(((friend?.wins || 0) / (friend?.games_played || 1)) * 100)
+                            : 0;
                           return (
                             <motion.div
                               key={friendId}
                               initial={{ opacity: 0, x: -20 }}
                               animate={{ opacity: 1, x: 0 }}
-                              className="flex items-center justify-between p-3 bg-white rounded-2xl shadow-sm border border-zinc-100 hover:shadow-md transition-shadow"
+                              className="flex items-center justify-between p-3 bg-white rounded-2xl shadow-sm border border-zinc-100 hover:shadow-md transition-shadow mb-2"
                             >
                               <div className="flex items-center gap-3">
                                 <div className="relative">
@@ -357,9 +414,15 @@ export function Social({ currentUserId, currentUsername, roomId, currentRoomId, 
                                 <div>
                                   <p className="font-bold text-zinc-900">{friend?.username || 'Bilinmiyor'}</p>
                                   <div className="flex items-center gap-2 mt-0.5">
-                                    <span className="text-xs text-green-600 font-medium">{status.text}</span>
+                                    <span className="text-xs text-green-600 font-medium flex items-center gap-1">
+                                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+                                      {status.text}
+                                    </span>
                                     {friend?.wins !== undefined && friend.wins > 0 && (
-                                      <span className="text-xs text-zinc-500">• {friend.wins} galibiyet</span>
+                                      <span className="text-xs text-zinc-500 flex items-center gap-0.5">
+                                        <Trophy className="w-3 h-3 text-yellow-500" />
+                                        {friend.wins}W · {friendWinRate}%
+                                      </span>
                                     )}
                                   </div>
                                 </div>
@@ -516,7 +579,7 @@ export function Social({ currentUserId, currentUsername, roomId, currentRoomId, 
                 transition={{ duration: 0.2 }}
               >
                 {/* Header Banner */}
-                <div className="relative mb-4 overflow-hidden">
+                <div className="relative mb-4 overflow-hidden rounded-2xl">
                   <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 opacity-90" />
                   <div className="relative p-4 text-center">
                     <motion.div
@@ -529,6 +592,32 @@ export function Social({ currentUserId, currentUsername, roomId, currentRoomId, 
                     <h3 className="font-black text-yellow-900 text-lg">Liderlik Tablosu</h3>
                     <p className="text-xs text-yellow-800 font-medium">En iyi oyuncular</p>
                   </div>
+                </div>
+
+                {/* Sort Buttons */}
+                <div className="flex gap-2 mb-4">
+                  {[
+                    { key: 'wins' as const, label: 'Galibiyet', icon: Trophy },
+                    { key: 'games' as const, label: 'Oyun', icon: Gamepad2 },
+                    { key: 'coins' as const, label: 'Coin', icon: CircleDollarSign },
+                  ].map((sort) => {
+                    const Icon = sort.icon;
+                    return (
+                      <motion.button
+                        key={sort.key}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setSortBy(sort.key)}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                          sortBy === sort.key
+                            ? 'bg-gradient-to-br from-red-500 to-orange-500 text-white shadow-lg shadow-red-500/30'
+                            : 'bg-white text-zinc-500 border border-zinc-200'
+                        }`}
+                      >
+                        <Icon className="w-3.5 h-3.5" />
+                        {sort.label}
+                      </motion.button>
+                    );
+                  })}
                 </div>
 
                 {topPlayers.length === 0 ? (
@@ -680,22 +769,31 @@ export function Social({ currentUserId, currentUsername, roomId, currentRoomId, 
                   <div className="space-y-3">
                     {availableUsers.map(([id, user], index) => {
                       const isPending = sentRequests.includes(id);
+                      const isOnline = user.is_online;
                       return (
                         <motion.div
                           key={id}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.03 }}
-                          className="flex items-center justify-between p-3 bg-white rounded-2xl border border-zinc-100 shadow-sm hover:shadow-md transition-shadow"
+                          className="flex items-center justify-between p-3 bg-white rounded-2xl border border-zinc-100 shadow-sm hover:shadow-md transition-shadow mb-2"
                         >
                           <div className="flex items-center gap-3">
-                            <AvatarImage
-                              avatarId={user.avatar || 'avatar_default_1'}
-                              size={40}
-                            />
+                            <div className="relative">
+                              <AvatarImage
+                                avatarId={user.avatar || 'avatar_default_1'}
+                                size={40}
+                              />
+                              <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 border-2 border-white rounded-full ${
+                                isOnline ? 'bg-green-500' : 'bg-zinc-300'
+                              }`} />
+                            </div>
                             <div>
                               <p className="font-bold text-zinc-900">{user.username}</p>
                               <div className="flex items-center gap-2 mt-0.5">
+                                <span className={`text-xs font-medium ${isOnline ? 'text-green-600' : 'text-zinc-400'}`}>
+                                  {isOnline ? 'Çevrimiçi' : 'Çevrimdışı'}
+                                </span>
                                 <div className="flex items-center gap-1 text-xs text-zinc-500">
                                   <Gamepad2 className="w-3 h-3" />
                                   <span className="font-medium">{user.games_played || 0} oyun</span>

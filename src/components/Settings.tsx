@@ -4,14 +4,14 @@ import {
   Volume2, VolumeX, LogOut, HelpCircle, X, Share2, Star,
   Heart, Code, Camera, ChevronRight, ChevronLeft, Bell, BellOff,
   Gamepad2, Trophy, CircleDollarSign, Edit3, Check, Shield,
-  Info, ExternalLink, Sliders, Sparkles, Zap, Moon, Settings as SettingsIcon,
-  User, Palette, BellRing, Vibrate, GitBranch, Package, Tag, Plus, Wrench, Brush
+  Info, ExternalLink, Sliders, Sparkles, Zap, Settings as SettingsIcon,
+  User, Palette, BellRing, Vibrate, GitBranch, Package, Tag, Plus, Wrench, Brush,
+  Smartphone, Languages, Trash2, AlertTriangle, Target
 } from 'lucide-react';
 import { HowToPlay } from './HowToPlay';
 import { AvatarImage, getAvatarIdFromEmoji } from './AvatarImage';
 import { supabaseService } from '../lib/supabase';
 import { CHANGELOG } from '../lib/changelog';
-import { useTheme } from '../hooks/useTheme';
 
 interface SettingsProps {
   soundEnabled: boolean;
@@ -31,12 +31,28 @@ interface UserData {
   wins: number;
 }
 
+const RANKS = [
+  { name: 'Çaylak',   icon: '🌱', color: 'text-green-600',  minXP: 0,    maxXP: 99   },
+  { name: 'Acemi',    icon: '⚔️',  color: 'text-blue-600',   minXP: 100,  maxXP: 299  },
+  { name: 'Usta',     icon: '🛡️',  color: 'text-purple-600', minXP: 300,  maxXP: 699  },
+  { name: 'Uzman',    icon: '🔥',  color: 'text-orange-600', minXP: 700,  maxXP: 1499 },
+  { name: 'Efsane',   icon: '👑',  color: 'text-yellow-600', minXP: 1500, maxXP: 2999 },
+  { name: 'Tanrısal', icon: '💎',  color: 'text-cyan-600',   minXP: 3000, maxXP: Infinity },
+];
+
+function getXP(stats: Pick<UserData, 'wins' | 'gamesPlayed'>): number {
+  return stats.wins * 10 + stats.gamesPlayed * 2;
+}
+
+function getRank(xp: number) {
+  return RANKS.slice().reverse().find(r => xp >= r.minXP) ?? RANKS[0];
+}
+
 export function Settings({ soundEnabled, onToggleSound, onLogout, userName, userId, onClose }: SettingsProps) {
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [section, setSection] = useState<Section>('main');
   const [notifications, setNotifications] = useState(true);
   const [vibration, setVibration]   = useState(true);
-  const { isDark: darkMode, toggleTheme: toggleDarkMode } = useTheme();
   const [autoReady, setAutoReady]   = useState(false);
   const [shareSuccess, setShareSuccess] = useState(false);
   const [editingName, setEditingName]   = useState(false);
@@ -78,30 +94,50 @@ export function Settings({ soundEnabled, onToggleSound, onLogout, userName, user
     setTimeout(() => setShareSuccess(false), 2000);
   };
 
-  const handleSaveName = () => {
-    if (!newName.trim() || newName.trim() === userName) { setEditingName(false); return; }
-    setNameSaved(true);
+  const [isSavingName, setIsSavingName] = useState(false);
+
+  const handleSaveName = async () => {
+    const trimmed = newName.trim();
+    if (!trimmed || trimmed === userName || trimmed.length < 2) {
+      setEditingName(false);
+      setNewName(userName || '');
+      return;
+    }
+    setIsSavingName(true);
+    if (userId) {
+      const success = await supabaseService.updateUsername(userId, trimmed);
+      if (success) {
+        setNameSaved(true);
+        setTimeout(() => setNameSaved(false), 2000);
+      } else {
+        setNewName(userName || '');
+      }
+    } else {
+      setNameSaved(true);
+      setTimeout(() => setNameSaved(false), 2000);
+    }
+    setIsSavingName(false);
     setEditingName(false);
-    setTimeout(() => setNameSaved(false), 2000);
   };
 
   const winRate = userData.gamesPlayed > 0
     ? Math.round((userData.wins / userData.gamesPlayed) * 100)
     : 0;
+  const xp   = getXP(userData);
+  const rank = getRank(xp);
 
   const Toggle = ({ value, onChange }: { value: boolean; onChange: () => void }) => (
     <motion.button
       onClick={onChange}
-      className={`relative w-14 h-7 rounded-full transition-all shadow-inner ${
-        value ? 'bg-gradient-to-r from-green-400 to-emerald-500' : 'bg-zinc-300'
+      whileTap={{ scale: 0.95 }}
+      className={`relative w-12 h-7 rounded-full transition-all ${
+        value ? 'bg-gradient-to-r from-green-400 to-emerald-500 shadow-md shadow-green-500/30' : 'bg-zinc-300'
       }`}
     >
       <motion.div
-        animate={{ x: value ? 28 : 2 }}
+        animate={{ x: value ? 22 : 2 }}
         transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-        className={`absolute top-1 w-5 h-5 rounded-full shadow-md ${
-          value ? 'bg-white' : 'bg-white'
-        }`}
+        className="absolute top-1 w-5 h-5 rounded-full bg-white shadow-md"
       />
     </motion.button>
   );
@@ -143,7 +179,7 @@ export function Settings({ soundEnabled, onToggleSound, onLogout, userName, user
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-gradient-to-br from-zinc-100 via-zinc-50 to-zinc-100 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950 z-[100] overflow-hidden"
+        className="fixed inset-0 bg-gradient-to-br from-zinc-100 via-zinc-50 to-zinc-100 z-[100] overflow-hidden"
         onClick={onClose}
       >
         {/* Animated Background */}
@@ -207,15 +243,17 @@ export function Settings({ soundEnabled, onToggleSound, onLogout, userName, user
                         <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-amber-500/10 rounded-full" />
                         
                         <div className="relative z-10 flex items-center gap-4">
-                          <div className="w-20 h-20 rounded-3xl overflow-hidden border-3 border-white/20 shadow-xl">
+                          <div className="w-20 h-20 rounded-3xl overflow-hidden border-[3px] border-white/20 shadow-xl">
                             <AvatarImage avatarId={getAvatarIdFromEmoji(userData.avatar)} size={80} />
                           </div>
 
                           <div className="flex-1 min-w-0">
                             <p className="font-black text-xl truncate">{userName}</p>
                             <div className="flex items-center gap-2 mt-2">
-                              <span className="px-3 py-1 bg-white/10 text-xs font-bold rounded-full">Çaylak</span>
-                              <span className="text-xs text-zinc-400">67 XP</span>
+                              <span className="px-3 py-1 bg-white/10 text-xs font-bold rounded-full flex items-center gap-1">
+                                {rank.icon} {rank.name}
+                              </span>
+                              <span className="text-xs text-zinc-400">{xp.toLocaleString()} XP</span>
                             </div>
                           </div>
 
@@ -266,24 +304,6 @@ export function Settings({ soundEnabled, onToggleSound, onLogout, userName, user
                       </div>
                     </motion.button>
 
-                    <motion.div
-                      whileTap={{ scale: 0.97 }}
-                      onClick={toggleDarkMode}
-                      className={`p-4 rounded-2xl flex items-center gap-3 transition-all col-span-2 cursor-pointer ${
-                        darkMode ? 'bg-indigo-50 border-2 border-indigo-200' : 'bg-zinc-50 border-2 border-zinc-200'
-                      }`}
-                    >
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                        darkMode ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg' : 'bg-zinc-200 text-zinc-400'
-                      }`}>
-                        <Moon className="w-6 h-6" />
-                      </div>
-                      <div className="text-left flex-1">
-                        <p className="text-xs text-zinc-500 font-medium">Tema</p>
-                        <p className="text-sm font-bold text-zinc-900">{darkMode ? 'Karanlık Mod' : 'Aydınlık Mod'}</p>
-                      </div>
-                      <Toggle value={darkMode} onChange={toggleDarkMode} />
-                    </motion.div>
                   </div>
 
                   {/* Settings Groups */}
@@ -469,9 +489,10 @@ export function Settings({ soundEnabled, onToggleSound, onLogout, userName, user
                         />
                         <button 
                           onClick={handleSaveName} 
-                          className="px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-bold shadow-lg"
+                          disabled={isSavingName}
+                          className="px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-bold shadow-lg disabled:opacity-50"
                         >
-                          <Check className="w-5 h-5" />
+                          {isSavingName ? <Sparkles className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
                         </button>
                       </div>
                     ) : (
@@ -495,10 +516,11 @@ export function Settings({ soundEnabled, onToggleSound, onLogout, userName, user
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     {[
                       { label: 'Oyun', value: userData.gamesPlayed, icon: Gamepad2, color: 'from-purple-500 to-pink-500' },
                       { label: 'Galibiyet', value: userData.wins, icon: Trophy, color: 'from-yellow-500 to-amber-500' },
+                      { label: 'Oran', value: `${winRate}%`, icon: Target, color: 'from-green-500 to-emerald-500' },
                     ].map((s, i) => {
                       const Icon = s.icon;
                       return (
@@ -512,11 +534,26 @@ export function Settings({ soundEnabled, onToggleSound, onLogout, userName, user
                           <div className={`w-10 h-10 mx-auto mb-2 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-white shadow-lg`}>
                             <Icon className="w-5 h-5" />
                           </div>
-                          <p className="text-2xl font-black text-zinc-900">{s.value}</p>
+                          <p className="text-xl font-black text-zinc-900">{s.value}</p>
                           <p className="text-xs text-zinc-500 font-medium mt-1">{s.label}</p>
                         </motion.div>
                       );
                     })}
+                  </div>
+
+                  <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl p-5 border border-amber-100">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center shadow-lg">
+                          <CircleDollarSign className="w-7 h-7 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-lg text-zinc-900">Coin Bakiyesi</p>
+                          <p className="text-sm text-zinc-500">Avatar mağazasında harca</p>
+                        </div>
+                      </div>
+                      <p className="text-2xl font-black text-amber-600">{userData.coins}</p>
+                    </div>
                   </div>
 
                   <motion.button
@@ -552,27 +589,54 @@ export function Settings({ soundEnabled, onToggleSound, onLogout, userName, user
                         </div>
                         <div>
                           <p className="font-bold text-lg text-zinc-900">Oyun Sesleri</p>
-                          <p className="text-sm text-zinc-500">Tüm ses efektleri</p>
+                          <p className="text-sm text-zinc-500">Tık, zafer, oy verme sesleri</p>
                         </div>
                       </div>
                       <Toggle value={soundEnabled} onChange={onToggleSound} />
                     </div>
                   </div>
 
-                  <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-5 border border-indigo-100">
+                  <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-5 border border-orange-100">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className={`w-14 h-14 rounded-xl flex items-center justify-center shadow-lg ${
-                          darkMode ? 'bg-gradient-to-br from-indigo-500 to-purple-600' : 'bg-zinc-200'
+                          vibration ? 'bg-gradient-to-br from-orange-400 to-amber-500' : 'bg-zinc-200'
                         }`}>
-                          <Moon className={`w-7 h-7 ${darkMode ? 'text-white' : 'text-zinc-400'}`} />
+                          <Vibrate className="w-7 h-7 text-white" />
                         </div>
                         <div>
-                          <p className="font-bold text-lg text-zinc-900">Karanlık Mod</p>
-                          <p className="text-sm text-zinc-500">Gözleri yormaz</p>
+                          <p className="font-bold text-lg text-zinc-900">Titreşim</p>
+                          <p className="text-sm text-zinc-500">Dokunsal geri bildirim</p>
                         </div>
                       </div>
-                      <Toggle value={darkMode} onChange={toggleDarkMode} />
+                      <Toggle value={vibration} onChange={() => toggle('vibration', vibration, setVibration)} />
+                    </div>
+                  </div>
+
+                  <div className="bg-zinc-50 rounded-2xl p-4">
+                    <p className="text-xs font-bold text-zinc-400 uppercase mb-3 flex items-center gap-2">
+                      <Smartphone className="w-4 h-4" /> Ses Tipi
+                    </p>
+                    <div className="space-y-2">
+                      {[
+                        { name: 'Buton Tıklaması', icon: '👆', desc: 'Dokunma sesleri' },
+                        { name: 'Oyun Başlangıcı', icon: '🎮', desc: 'Oyun başladığında' },
+                        { name: 'Zafer', icon: '🏆', desc: 'Kazandığında' },
+                        { name: 'Oylama', icon: '🗳️', desc: 'Oy verme sırasında' },
+                      ].map((s, i) => (
+                        <div key={i} className="flex items-center gap-3 p-2.5 bg-white rounded-xl">
+                          <span className="text-xl">{s.icon}</span>
+                          <div className="flex-1">
+                            <p className="text-sm font-bold text-zinc-900">{s.name}</p>
+                            <p className="text-xs text-zinc-500">{s.desc}</p>
+                          </div>
+                          <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+                            soundEnabled ? 'bg-green-100 text-green-600' : 'bg-zinc-100 text-zinc-400'
+                          }`}>
+                            {soundEnabled ? 'Aktif' : 'Kapalı'}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -600,27 +664,54 @@ export function Settings({ soundEnabled, onToggleSound, onLogout, userName, user
                         </div>
                         <div>
                           <p className="font-bold text-lg text-zinc-900">Arkadaş İstekleri</p>
-                          <p className="text-sm text-zinc-500">Bildirimler</p>
+                          <p className="text-sm text-zinc-500">Yeni arkadaşlık isteklerinde bildir</p>
                         </div>
                       </div>
                       <Toggle value={notifications} onChange={() => toggle('notifications', notifications, setNotifications)} />
                     </div>
                   </div>
 
-                  <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-5 border border-orange-100">
+                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-5 border border-purple-100">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className={`w-14 h-14 rounded-xl flex items-center justify-center shadow-lg ${
-                          autoReady ? 'bg-gradient-to-br from-orange-400 to-amber-500' : 'bg-zinc-200'
+                          autoReady ? 'bg-gradient-to-br from-purple-400 to-pink-500' : 'bg-zinc-200'
                         }`}>
                           <Zap className="w-7 h-7 text-white" />
                         </div>
                         <div>
                           <p className="font-bold text-lg text-zinc-900">Otomatik Hazır</p>
-                          <p className="text-sm text-zinc-500">Oyun tercihler</p>
+                          <p className="text-sm text-zinc-500">Odaya girince otomatik hazır ol</p>
                         </div>
                       </div>
                       <Toggle value={autoReady} onChange={() => toggle('autoReady', autoReady, setAutoReady)} />
+                    </div>
+                  </div>
+
+                  <div className="bg-zinc-50 rounded-2xl p-4">
+                    <p className="text-xs font-bold text-zinc-400 uppercase mb-3 flex items-center gap-2">
+                      <BellRing className="w-4 h-4" /> Bildirim Tipleri
+                    </p>
+                    <div className="space-y-2">
+                      {[
+                        { name: 'Arkadaşlık İsteği', icon: '🤝', desc: 'Biri seni eklemek istediğinde' },
+                        { name: 'Oda Daveti', icon: '🎮', desc: 'Arkadaşın seni oyuna davet ettiğinde' },
+                        { name: 'Yeni Mesaj', icon: '💬', desc: 'Oyun içi sohbette mesaj geldiğinde' },
+                        { name: 'Oyun Başlangıcı', icon: '🚀', desc: 'Oyun başladığında uyar' },
+                      ].map((s, i) => (
+                        <div key={i} className="flex items-center gap-3 p-2.5 bg-white rounded-xl">
+                          <span className="text-xl">{s.icon}</span>
+                          <div className="flex-1">
+                            <p className="text-sm font-bold text-zinc-900">{s.name}</p>
+                            <p className="text-xs text-zinc-500">{s.desc}</p>
+                          </div>
+                          <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+                            notifications ? 'bg-blue-100 text-blue-600' : 'bg-zinc-100 text-zinc-400'
+                          }`}>
+                            {notifications ? 'Aktif' : 'Kapalı'}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>

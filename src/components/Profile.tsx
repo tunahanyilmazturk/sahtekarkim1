@@ -109,6 +109,8 @@ export function Profile({ user, onClose, onLogout }: ProfileProps) {
   const [showShop, setShowShop] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [newName, setNewName] = useState(user.name);
+  const [nameSaved, setNameSaved] = useState(false);
+  const [isSavingName, setIsSavingName] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -142,6 +144,25 @@ export function Profile({ user, onClose, onLogout }: ProfileProps) {
     return () => unsub();
   }, []);
 
+  const handleSaveName = async () => {
+    const trimmed = newName.trim();
+    if (!trimmed || trimmed === user.name || trimmed.length < 2) {
+      setEditingName(false);
+      setNewName(user.name);
+      return;
+    }
+    setIsSavingName(true);
+    const success = await supabaseService.updateUsername(user.id, trimmed);
+    setIsSavingName(false);
+    if (success) {
+      setNameSaved(true);
+      setTimeout(() => setNameSaved(false), 2000);
+    } else {
+      setNewName(user.name);
+    }
+    setEditingName(false);
+  };
+
   const handleAvatarChange = async (newEmoji: string) => {
     await supabaseService.updateUserAvatar(user.id, newEmoji);
     setStats(prev => ({ ...prev, avatar: newEmoji }));
@@ -159,6 +180,8 @@ export function Profile({ user, onClose, onLogout }: ProfileProps) {
 
   const xp            = getXP(stats);
   const rank          = getRank(xp);
+  const rankIndex     = RANKS.indexOf(rank);
+  const nextRank      = rankIndex < RANKS.length - 1 ? RANKS[rankIndex + 1] : null;
   const levelProgress = getLevelProgress(xp);
   const winRate       = stats.gamesPlayed > 0 ? Math.round((stats.wins / stats.gamesPlayed) * 100) : 0;
   const impostorWinRate = stats.gamesPlayedAsImpostor > 0
@@ -181,7 +204,7 @@ export function Profile({ user, onClose, onLogout }: ProfileProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 z-[100] overflow-hidden"
+        className="fixed inset-0 bg-gradient-to-br from-zinc-100 via-zinc-50 to-zinc-100 z-[100] overflow-hidden"
         onClick={onClose}
       >
         {/* Animated Background */}
@@ -238,69 +261,146 @@ export function Profile({ user, onClose, onLogout }: ProfileProps) {
           </div>
 
           <div className="relative flex-1 overflow-y-auto">
-            {/* Profile Header Card */}
+            {/* Profile Header Card with Cover Banner */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="relative bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 mx-4 mt-4 rounded-3xl p-6 text-white overflow-hidden shadow-2xl"
+              className="relative mx-4 mt-4 rounded-3xl overflow-hidden shadow-2xl"
             >
-              <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-white/5" />
-              <div className="absolute -bottom-8 -left-8 w-40 h-40 rounded-full bg-white/5" />
+              {/* Cover Banner */}
+              <div className={`relative h-28 ${rank.bgColor} overflow-hidden`}>
+                <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-white/10" />
+                {[...Array(6)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute text-3xl opacity-20"
+                    style={{
+                      left: `${10 + i * 15}%`,
+                      top: `${Math.random() * 60}%`,
+                    }}
+                    animate={{
+                      y: [0, -15, 0],
+                      rotate: [0, 15, 0],
+                    }}
+                    transition={{
+                      duration: 4 + i,
+                      repeat: Infinity,
+                      delay: i * 0.3,
+                    }}
+                  >
+                    {['⭐', '🎮', '🏆', '👑', '💎', '🔥'][i]}
+                  </motion.div>
+                ))}
+                <div className="absolute top-3 right-3">
+                  <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full ${rank.bgColor} ${rank.color} text-sm font-black shadow-lg bg-white/80 backdrop-blur-sm`}>
+                    <span className="text-base">{rank.icon}</span>
+                    <span>{rank.name}</span>
+                    {rank.icon === '💎' && <Sparkles className="w-3.5 h-3.5" />}
+                  </div>
+                </div>
+              </div>
 
-              <div className="relative z-10 space-y-4">
-                {/* Avatar & Name Section */}
-                <div className="flex items-center gap-4">
+              {/* Profile Info Section */}
+              <div className="relative bg-white px-6 pb-6">
+                {/* Avatar - overlapping cover */}
+                <div className="flex items-end gap-4 -mt-12 mb-4">
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setShowShop(true)}
-                    className="relative group cursor-pointer"
+                    className="relative group cursor-pointer shrink-0"
                   >
                     <div className="relative">
                       <AvatarImage
                         avatarId={stats.avatar.startsWith('avatar_') ? stats.avatar : getAvatarIdFromEmoji(stats.avatar)}
-                        size={80}
-                        className="rounded-3xl border-4 border-white/20 shadow-xl"
+                        size={88}
+                        className="rounded-3xl border-4 border-white shadow-xl"
                       />
                       <div className="absolute inset-0 bg-black/40 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <Edit3 className="w-5 h-5 text-white" />
                       </div>
                     </div>
-                    <div className="absolute -bottom-2 -right-2 w-6 h-6 bg-green-400 border-4 border-zinc-900 rounded-full shadow-lg" />
+                    <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-400 border-[3px] border-white rounded-full shadow-lg" />
                   </motion.button>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h3 className="text-2xl font-black truncate">{user.name}</h3>
-                        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full ${rank.bgColor} ${rank.color} text-sm font-bold mt-2`}>
-                          <span className="text-lg">{rank.icon}</span>
-                          <span>{rank.name}</span>
-                          {rank.icon === '💎' && <Sparkles className="w-4 h-4" />}
-                        </div>
+                  <div className="flex-1 min-w-0 pb-1">
+                    {editingName ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          autoFocus
+                          value={newName}
+                          onChange={(e) => setNewName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveName();
+                            if (e.key === 'Escape') { setEditingName(false); setNewName(user.name); }
+                          }}
+                          maxLength={20}
+                          className="text-xl font-black text-zinc-900 bg-zinc-100 rounded-lg px-2 py-1 outline-none border-2 border-purple-400 focus:border-purple-500 w-full max-w-[180px]"
+                        />
+                        <motion.button
+                          whileTap={{ scale: 0.9 }}
+                          onClick={handleSaveName}
+                          disabled={isSavingName}
+                          className="p-1.5 bg-green-500 text-white rounded-lg shadow-md"
+                        >
+                          <Check className="w-4 h-4" />
+                        </motion.button>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-2xl font-black truncate text-zinc-900">
+                          {nameSaved ? newName : user.name}
+                        </h3>
+                        {nameSaved && (
+                          <motion.span
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="text-green-500"
+                          >
+                            <Check className="w-4 h-4" />
+                          </motion.span>
+                        )}
+                        <motion.button
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => { setEditingName(true); setNewName(user.name); }}
+                          className="p-1 text-zinc-400 hover:text-purple-500 transition-colors"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </motion.button>
+                      </div>
+                    )}
+                    <p className="text-xs text-zinc-500 font-medium mt-0.5">
+                      {memberDays} gündür üye · {stats.friends.length} arkadaş
+                    </p>
                   </div>
                 </div>
 
-                {/* XP Progress */}
-                <div className="space-y-2 pt-2 border-t border-white/10">
+                {/* XP Progress with Next Rank */}
+                <div className="space-y-2.5">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="font-bold text-white">{xp.toLocaleString()} XP</span>
-                    <span className="text-zinc-300">{levelProgress.percent}%</span>
+                    <span className="font-black text-zinc-900">{xp.toLocaleString()} XP</span>
+                    {nextRank ? (
+                      <span className="text-zinc-500 font-medium text-xs">
+                        <span className={nextRank.color}>{nextRank.icon} {nextRank.name}</span>'e {nextRank.minXP - xp} XP
+                      </span>
+                    ) : (
+                      <span className="text-xs font-black text-cyan-600 flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" /> Maksimum Rütbe
+                      </span>
+                    )}
                   </div>
-                  <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-2.5 bg-zinc-100 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${levelProgress.percent}%` }}
                       transition={{ duration: 1, ease: 'easeOut', delay: 0.3 }}
-                      className="h-full bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 rounded-full shadow-lg shadow-orange-500/50"
+                      className="h-full bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 rounded-full shadow-lg shadow-orange-500/30"
                     />
                   </div>
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-4 gap-2 pt-2 border-t border-white/10">
+                <div className="grid grid-cols-4 gap-2 mt-4">
                   {[
                     { value: stats.gamesPlayed, label: 'Oyun', icon: '🎮' },
                     { value: stats.wins, label: 'Galibiyet', icon: '🏆' },
@@ -312,11 +412,11 @@ export function Profile({ user, onClose, onLogout }: ProfileProps) {
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: 0.1 + i * 0.05 }}
-                      className="text-center"
+                      className="text-center bg-zinc-50 rounded-xl py-2.5"
                     >
-                      <div className="text-xl mb-0.5">{stat.icon}</div>
-                      <p className="text-lg font-black text-white">{stat.value}</p>
-                      <p className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider">{stat.label}</p>
+                      <div className="text-lg mb-0.5">{stat.icon}</div>
+                      <p className="text-base font-black text-zinc-900">{stat.value}</p>
+                      <p className="text-[9px] text-zinc-500 uppercase font-bold tracking-wider">{stat.label}</p>
                     </motion.div>
                   ))}
                 </div>
