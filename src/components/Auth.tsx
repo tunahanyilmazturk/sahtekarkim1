@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
 import { User, Lock, ArrowLeft, Eye, EyeOff } from 'lucide-react';
-import { supabase, supabaseService } from '../lib/supabase';
+import { supabaseService } from '../lib/supabase';
 
 const PBKDF2_ITERATIONS = 100000;
 const SALT_BYTES = 16;
@@ -10,39 +10,23 @@ const HASH_BITS = 256;
 function generateSalt(): string {
   const array = new Uint8Array(SALT_BYTES);
   crypto.getRandomValues(array);
-  return Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('');
+  return Array.from(array).map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
 async function deriveHash(password: string, salt: string): Promise<string> {
-  const encoder = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
-    'raw',
-    encoder.encode(password),
-    'PBKDF2',
-    false,
-    ['deriveBits']
+    'raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits'],
   );
-  const derivedBits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', salt: encoder.encode(salt), iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt: new TextEncoder().encode(salt), iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
     keyMaterial,
-    HASH_BITS
+    HASH_BITS,
   );
-  return Array.from(new Uint8Array(derivedBits)).map(b => b.toString(16).padStart(2, '0')).join('');
+  return Array.from(new Uint8Array(bits)).map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
-async function hashPassword(password: string): Promise<string> {
-  const salt = generateSalt();
-  const hash = await deriveHash(password, salt);
-  return `${salt}:${hash}`;
-}
-
-async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
-  const [salt, hash] = storedHash.split(':');
-  if (!salt || !hash) {
-    return storedHash === await deriveHash(password, 'sahtekar_salt_v1');
-  }
-  const computedHash = await deriveHash(password, salt);
-  return computedHash === hash;
+async function hashPassword(password: string, salt = generateSalt()): Promise<string> {
+  return `${salt}:${await deriveHash(password, salt)}`;
 }
 
 interface AuthProps {
@@ -89,37 +73,30 @@ export function Auth({ onLogin, onBack }: AuthProps) {
     try {
       const usernameLower = username.toLowerCase().trim();
       
-      // Check if user exists
-      const { data: existingUsers, error: fetchError } = await supabase
-        .from('users')
-        .select('*')
-        .ilike('username', usernameLower);
-
-      if (fetchError) throw fetchError;
-
-      const existingUser = existingUsers && existingUsers.length > 0 ? existingUsers[0] : null;
-
       if (isLogin) {
-        if (existingUser) {
-          const isValid = await verifyPassword(password, existingUser.password);
-          if (isValid) {
-            setSuccessMsg('Giriş başarılı!');
-            onLogin(existingUser.id, existingUser.username);
-          } else {
-            setError('Şifre yanlış');
-          }
+        // The password hash is verified inside the database function; it is never
+        // selected into the browser.
+        const salt = await supabaseService.getPasswordSalt(usernameLower);
+        const passwordHash = salt ? await hashPassword(password, salt) : '';
+        const user = passwordHash
+          ? await supabaseService.loginViaRPC(usernameLower, passwordHash)
+          : null;
+        if (user) {
+          setSuccessMsg('Giriş başarılı!');
+          onLogin(user.id, user.username);
         } else {
-          setError('Kullanıcı bulunamadı');
+          setError('Kullanıcı adı veya şifre yanlış');
         }
       } else {
+        const existingUser = await supabaseService.getUserByUsername(usernameLower);
         if (existingUser) {
           setError('Bu kullanıcı adı zaten kullanılıyor');
         } else {
-          const hashedPassword = await hashPassword(password);
           const userId = `user_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-          await supabaseService.createUser(userId, username.trim(), hashedPassword);
+          const user = await supabaseService.registerViaRPC(userId, username.trim(), await hashPassword(password));
+          if (!user) throw new Error('Kullanıcı kaydı tamamlanamadı');
           setSuccessMsg('Hesap oluşturuldu! Hoş geldiniz!');
-          onLogin(userId, username.trim());
+          onLogin(user.id, user.username);
         }
       }
     } catch (err: any) {

@@ -4,6 +4,7 @@ import { supabaseService, getRandomAvatar, type Room as SupabaseRoom, type Playe
 import { getRandomWords } from '../lib/words';
 import { GAME_CONFIG, ERROR_MESSAGES, getRandomBotName, getRandomBotAvatar, POINTS } from '../lib/constants';
 import { getSmartBotHint, getSmartBotVote, getRandomBotDelay } from '../lib/botAI';
+import { isCorrectGuess, resolveVoting } from '../lib/gameRules';
 
 export function useGame() {
   // State
@@ -493,46 +494,18 @@ export function useGame() {
     }
   };
 
-  const calculateVoteResults = async (currentPlayers: SupabasePlayer[], votes: any[]) => {
+  const calculateVoteResults = async (currentPlayers: SupabasePlayer[], votes: import('../lib/supabase').Vote[]) => {
     if (!room) return;
     
     try {
-      const voteCounts: Record<string, number> = {};
-      votes.forEach(v => {
-        voteCounts[v.voted_player_id] = (voteCounts[v.voted_player_id] || 0) + 1;
-      });
-
-      let maxVotes = 0;
-      let votedOutId: string | null = null;
-      let tie = false;
-
-      for (const [vid, count] of Object.entries(voteCounts)) {
-        if (count > maxVotes) {
-          maxVotes = count;
-          votedOutId = vid;
-          tie = false;
-        } else if (count === maxVotes) {
-          tie = true;
-        }
-      }
-
-      const impostor = currentPlayers.find(p => p.role === 'impostor');
-      let winner: 'impostor' | 'citizens' = 'citizens';
-      let message = '';
-
-      if (tie || !votedOutId) {
-        winner = 'impostor';
-        message = `Berabere! Sahtekar kazandı!`;
-      } else {
-        const votedPlayer = currentPlayers.find(p => p.id === votedOutId);
-        if (votedPlayer?.role === 'impostor') {
-          winner = 'citizens';
-          message = `Sahtekar bulundu! Vatandaşlar kazand��!`;
-        } else {
-          winner = 'impostor';
-          message = `Yanlış! ${votedPlayer?.name} vatandaştı. Sahtekar kazandı!`;
-        }
-      }
+      const voteMap = Object.fromEntries(votes.map(vote => [vote.voter_id, vote.voted_player_id]));
+      const result = resolveVoting(currentPlayers, voteMap);
+      const { winner } = result;
+      const message = result.reason === 'tie'
+        ? 'Berabere! Sahtekar kazandı!'
+        : result.reason === 'impostor_found'
+          ? 'Sahtekar bulundu! Vatandaşlar kazandı!'
+          : `Yanlış! ${result.votedOut?.name} vatandaştı. Sahtekar kazandı!`;
 
       await supabaseService.addMessage({
         room_id: room.id,
@@ -542,7 +515,9 @@ export function useGame() {
       });
 
       // Skorları güncelle
-      const pointsToAdd = winner === 'impostor' ? POINTS.IMPOSTOR_WIN : POINTS.CITIZEN_WIN;
+      const pointsToAdd = result.reason === 'tie'
+        ? POINTS.TIE
+        : winner === 'impostor' ? POINTS.IMPOSTOR_WIN : POINTS.CITIZEN_WIN;
       for (const player of currentPlayers) {
         const isWinner = (winner === 'impostor' && player.role === 'impostor') ||
                          (winner === 'citizens' && player.role !== 'impostor');
@@ -561,6 +536,10 @@ export function useGame() {
 
   const handleVote = async (votedPlayerId: string) => {
     if (!room || !playerId) return;
+    if (votedPlayerId === playerId || !room.players.some(player => player.id === votedPlayerId)) {
+      setError('Geçersiz oy hedefi');
+      return;
+    }
 
     try {
       await supabaseService.submitVote(room.id, playerId, votedPlayerId);
@@ -583,7 +562,7 @@ export function useGame() {
     if (player?.role !== 'impostor') return;
 
     try {
-      const isCorrect = guess.toLowerCase() === room.word?.toLowerCase();
+      const isCorrect = isCorrectGuess(guess, room.word ?? '');
 
       let winner: 'impostor' | 'citizens';
       let message: string;

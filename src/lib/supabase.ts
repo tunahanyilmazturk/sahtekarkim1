@@ -138,6 +138,12 @@ export const supabaseService = {
     return data[0] as User;
   },
 
+  async getPasswordSalt(username: string): Promise<string | null> {
+    const { data, error } = await supabase.rpc('fn_password_salt', { p_username: username });
+    if (error || typeof data !== 'string' || !data) return null;
+    return data;
+  },
+
   async registerViaRPC(userId: string, username: string, passwordHash: string): Promise<User | null> {
     const { data, error } = await supabase
       .rpc('fn_register', { p_id: userId, p_username: username, p_password: passwordHash });

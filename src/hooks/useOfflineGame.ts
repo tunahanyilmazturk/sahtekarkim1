@@ -4,6 +4,7 @@ import { getRandomWord } from '../lib/words';
 import { GAME_CONFIG, POINTS } from '../lib/constants';
 import { v4 as uuidv4 } from 'uuid';
 import { getSmartBotVote, getSmartBotHint, getRandomBotDelay, getRandomVotingDelay } from '../lib/botAI';
+import { isCorrectGuess, resolveVoting } from '../lib/gameRules';
 
 export type OfflinePhase = 
   | 'setup'           // Oyuncu ekleme
@@ -186,52 +187,33 @@ export function useOfflineGame() {
       }
       
       if (!targetId) return prev;
+      if (targetId === currentVoter.id || !prev.players.some(player => player.id === targetId)) return prev;
       
       const newVotes = { ...prev.votes, [currentVoter.id]: targetId };
       const nextPlayerIndex = prev.currentPlayerIndex + 1;
 
       if (nextPlayerIndex >= prev.players.length) {
-        const voteCounts: Record<string, number> = {};
-        Object.values(newVotes).forEach(votedId => {
-          voteCounts[votedId] = (voteCounts[votedId] || 0) + 1;
+        const result = resolveVoting(prev.players, newVotes);
+        const { winner, impostor } = result;
+        const awardedPoints = result.reason === 'tie'
+          ? POINTS.TIE
+          : winner === 'impostor' ? POINTS.IMPOSTOR_WIN : POINTS.CITIZEN_WIN;
+        const endMessage = result.reason === 'tie'
+          ? `Berabere! Sahtekar (${impostor.name}) kazandı! +${awardedPoints} puan`
+          : result.reason === 'impostor_found'
+            ? `Sahtekar (${impostor.name}) bulundu! Vatandaşlar kazandı! +${awardedPoints} puan`
+            : `Yanlış! ${result.votedOut?.name} vatandaştı. Sahtekar (${impostor.name}) kazandı! +${awardedPoints} puan`;
+        const scoredPlayers = prev.players.map(player => {
+          const isWinner = winner === 'impostor'
+            ? player.role === 'impostor'
+            : player.role === 'citizen';
+          return isWinner ? { ...player, score: player.score + awardedPoints } : player;
         });
-
-        let maxVotes = 0;
-        let votedOutId: string | null = null;
-        let tie = false;
-
-        for (const [vid, count] of Object.entries(voteCounts)) {
-          if (count > maxVotes) {
-            maxVotes = count;
-            votedOutId = vid;
-            tie = false;
-          } else if (count === maxVotes) {
-            tie = true;
-          }
-        }
-
-        const impostor = prev.players.find(p => p.role === 'impostor');
-        let winner: Winner;
-        let endMessage: string;
-
-        if (tie || !votedOutId) {
-          winner = 'impostor';
-          endMessage = `Berabere! Sahtekar (${impostor!.name}) kazandı! +${POINTS.TIE} puan`;
-        } else {
-          const votedOut = prev.players.find(p => p.id === votedOutId);
-          if (votedOut?.role === 'impostor') {
-            winner = 'citizens';
-            const citizenPoints = POINTS.CITIZEN_WIN;
-            endMessage = `Sahtekar (${impostor!.name}) bulundu! Vatandaşlar kazandı! +${citizenPoints} puan`;
-          } else {
-            winner = 'impostor';
-            endMessage = `Yanlış! ${votedOut?.name} vatandaştı. Sahtekar (${impostor!.name}) kazandı! +${POINTS.IMPOSTOR_WIN} puan`;
-          }
-        }
 
         return {
           ...prev,
           phase: 'finished',
+          players: scoredPlayers,
           votes: newVotes,
           winner,
           messages: [...prev.messages, {
@@ -258,7 +240,7 @@ export function useOfflineGame() {
       const impostor = prev.players.find(p => p.role === 'impostor');
       if (!impostor) return prev;
 
-      const isCorrect = guess.toLowerCase().trim() === prev.word.toLowerCase().trim();
+      const isCorrect = isCorrectGuess(guess, prev.word);
       let winner: Winner;
       let endMessage: string;
 
@@ -273,6 +255,13 @@ export function useOfflineGame() {
       return {
         ...prev,
         phase: 'finished',
+        players: prev.players.map(player => {
+          const isWinner = winner === 'impostor'
+            ? player.id === impostor.id
+            : player.role === 'citizen';
+          const points = winner === 'impostor' ? POINTS.IMPOSTOR_WIN : POINTS.CITIZEN_WIN;
+          return isWinner ? { ...player, score: player.score + points } : player;
+        }),
         winner,
         messages: [...prev.messages, {
           id: uuidv4(),

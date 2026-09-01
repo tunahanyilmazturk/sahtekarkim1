@@ -65,8 +65,8 @@ cp .env.example .env.local
 `.env.local` dosyasına aşağıdaki anahtarları ekle:
 ```env
 # Supabase (projede zaten var)
-VITE_SUPABASE_URL="https://lunufxlcpnwcqwtvbjfl.supabase.co"
-VITE_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+VITE_SUPABASE_URL="https://siodvtwjczzwlwtmqgvq.supabase.co"
+VITE_SUPABASE_ANON_KEY="sb_publishable_9Ig6IU83x0TT_cLl12dv2g_GjfTF1IQ"
 
 # Gemini AI (isteğe bağlı)
 GEMINI_API_KEY="your_gemini_api_key_here"

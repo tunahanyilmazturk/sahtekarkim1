@@ -49,7 +49,6 @@ export const WORDS: Word[] = [
   { word: "Yılan", hint: "Bacaksız sürüngen", category: CATEGORIES.ANIMALS },
   { word: "Kurbağa", hint: "Hem suda hem karada yaşayan", category: CATEGORIES.ANIMALS },
   { word: "Papağan", hint: "Konuşabilen kuş", category: CATEGORIES.ANIMALS },
-  { word: "Arı", hint: "Bal yapan böcek", category: CATEGORIES.ANIMALS },
   { word: "Zürafa", hint: "Boynu en uzun hayvan", category: CATEGORIES.ANIMALS },
   { word: "Timsah", hint: "Nehirlerde yaşayan büyük sürüngen", category: CATEGORIES.ANIMALS },
   { word: "İnek", hint: "Süt veren hayvan", category: CATEGORIES.ANIMALS },
@@ -310,7 +309,6 @@ export const WORDS: Word[] = [
   { word: "Büstiyer", hint: "Üst iç giyim", category: CATEGORIES.CLOTHES },
   { word: "Tayt", hint: "Spor giyim", category: CATEGORIES.CLOTHES },
   { word: "Şort", hint: "Kısa pantolon", category: CATEGORIES.CLOTHES },
-  { word: "Etek", hint: "Kısa paça", category: CATEGORIES.CLOTHES },
 
   // === ULAŞIM ===
   { word: "Araba", hint: "Karayolu aracı", category: CATEGORIES.TRANSPORT },
@@ -324,8 +322,6 @@ export const WORDS: Word[] = [
   { word: "Helikopter", hint: "Dönen kanatlı", category: CATEGORIES.TRANSPORT },
   { word: "Metropoll", hint: "Metro", category: CATEGORIES.TRANSPORT },
   { word: "Tramvay", hint: "Raylı toplu taşıma", category: CATEGORIES.TRANSPORT },
-  { word: "Tren", hint: "Şehirler arası", category: CATEGORIES.TRANSPORT },
-  { word: "Gemi", hint: "Yolcu gemisi", category: CATEGORIES.TRANSPORT },
   { word: "Vapur", hint: "Deniz otobüsü", category: CATEGORIES.TRANSPORT },
   { word: "Tekne", hint: "Küçük deniz aracı", category: CATEGORIES.TRANSPORT },
   { word: "Yat", hint: "Lüks deniz aracı", category: CATEGORIES.TRANSPORT },
@@ -403,7 +399,6 @@ export const WORDS: Word[] = [
   { word: "Bas Gitar", hint: "Derin telli", category: CATEGORIES.MUSIC },
   { word: "Elektro Gitar", hint: "Elektrikli telli", category: CATEGORIES.MUSIC },
   { word: "Bateri", hint: "Vurmalı", category: CATEGORIES.MUSIC },
-  { word: "Keman", hint: "Yaylı", category: CATEGORIES.MUSIC },
   { word: "Çalgı", hint: "Türk telli", category: CATEGORIES.MUSIC },
   { word: "Ud", hint: "Orta doğu telli", category: CATEGORIES.MUSIC },
   { word: "Kanun", hint: "Türk telli", category: CATEGORIES.MUSIC },
@@ -431,7 +426,6 @@ export const WORDS: Word[] = [
   { word: "Mide", hint: "Sindirim organı", category: CATEGORIES.BODY },
   { word: "Bağırsak", hint: "Sindirim", category: CATEGORIES.BODY },
   { word: "Akciğer", hint: "Nefes alma", category: CATEGORIES.BODY },
-  { word: "Kalp", hint: "Kan pompalama", category: CATEGORIES.BODY },
   { word: "Damar", hint: "Kan taşıyıcı", category: CATEGORIES.BODY },
   { word: "Sinir", hint: "Sinyal taşıyıcı", category: CATEGORIES.BODY },
 
@@ -632,7 +626,6 @@ export const WORDS: Word[] = [
   { word: "Koloni", hint: "Sömürge", category: CATEGORIES.HISTORY },
   { word: "Bağımsızlık", hint: "Özgürlük", category: CATEGORIES.HISTORY },
   { word: "Demokrasi", hint: "Halk yönetimi", category: CATEGORIES.HISTORY },
-  { word: "Cumhuriyet", hint: "Halk devleti", category: CATEGORIES.HISTORY },
 
   // === OKUL ===
   { word: "Sınıf", hint: "Öğrenci grubu", category: CATEGORIES.SCHOOL },
